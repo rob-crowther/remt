@@ -63,6 +63,8 @@ async def read_meta():
     files = await list_meta()
     files = (fn.replace('.metadata', '') for fn in files)
 
+    # read all metadata in one go for speed; note that this depends on the
+    # order of files returned by `list_meta`
     data = await read_file('*.metadata')
     data = data.replace('\n', '')
     data = data.replace('}{', '},{')
