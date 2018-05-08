@@ -28,6 +28,10 @@ import os.path
 
 BASE_DIR = '/home/root/.local/share/remarkable/xochitl/'
 
+FILE_TYPE = {
+    'CollectionType': 'd',
+}
+
 
 async def exec(*args):
     cmd = ' '.join('{}'.format(v) for v in args)
@@ -82,12 +86,23 @@ def get_fn(data, meta):
         return name
         
 
+def resolve_uuid(meta):
+    return {get_fn(data, meta): data for data in meta.values()}
+
+
+def marker(cond, marker):
+    return marker if cond else '-'
+
+
 async def cmd_ls():
     meta = await read_meta()
-    return [get_fn(data, meta) for data in meta.values()]
+    meta = resolve_uuid(meta)
+    for fn, data in sorted(meta.items()):
+        bookmarked = marker(data['pinned'] is True, 'b')
+        is_dir = marker(data['type'] == 'CollectionType', 'd')
+        line = '{}{} {}'.format(is_dir, bookmarked, fn)
+        print(line)
          
 
 loop = asyncio.get_event_loop()
-items = loop.run_until_complete(cmd_ls())
-for fn in sorted(items):
-    print(fn)
+loop.run_until_complete(cmd_ls())
