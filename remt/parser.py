@@ -43,15 +43,17 @@ SIZE_STROKE = struct.calcsize(FMT_STROKE)
 SIZE_SEGMENT = struct.calcsize(FMT_SEGMENT)
 
 
-def parse_segment(n_seg, data):
+def parse_segment(stroke, n_seg, data):
     x, y, pressure, tilt, _ = struct.unpack_from(FMT_SEGMENT, data.read(SIZE_SEGMENT))
-    return Segment(n_seg, x, y, pressure,  tilt)
+    return Segment(n_seg, stroke, x, y, pressure,  tilt)
 
 def parse_stroke(n_stroke, data):
     pen, color, _, width, n = struct.unpack(FMT_STROKE, data.read(SIZE_STROKE))
-    items = (parse_segment(i, data) for i in range(n))
 
-    yield Stroke(n_stroke, pen, color, width)
+    stroke = Stroke(n_stroke, pen, color, width)
+    items = (parse_segment(stroke, i, data) for i in range(n))
+
+    yield stroke
     yield from items
     yield StrokeEnd(n_stroke)
 

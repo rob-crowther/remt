@@ -39,8 +39,13 @@ STROKE_COLOR = {
 }
 
 STROKE_PEN = {
-    0: lambda v: v,
-    1: lambda v: v,
+    0: lambda v: v._replace(
+        width=(5 * v.tilt) * (6 * v.width - 10) * (1 + 2 * v.pressure ** 3)
+    ),
+    1: lambda v: v._replace(
+        width=(10 * v.tilt - 2) * (8 * v.width - 14),
+        opacity=(v.pressure - 0.2) ** 2,
+    ),
     # Pen / Fineliner
     2: lambda v: v._replace(width=32 * v.width ** 2 - 116 * v.width + 107),
     4: lambda v: v._replace(width=32 * v.width ** 2 - 116 * v.width + 107),
@@ -56,7 +61,7 @@ STROKE_PEN = {
     8: lambda v: v._replace(opacity=0),
 }
 
-StrokePen = namedtuple('StrokePen', ['width', 'color', 'opacity'])
+Pen = namedtuple('Pen', ['width', 'color', 'opacity', 'tilt', 'pressure'])
 
 
 @singledispatch
@@ -75,12 +80,6 @@ def _(layer, context):
 def _(stroke, context):
     context.new_path()
 
-    pen = StrokePen(stroke.width, stroke.color, 1)
-    pen = STROKE_PEN[stroke.pen](pen)
-    color = STROKE_COLOR[pen.color] + (pen.opacity,)
-
-    context.set_source_rgba(*color)
-    context.set_line_width(pen.width)
     # round line join is important with thicker lines
     context.set_line_join(cairo.LINE_JOIN_ROUND)
 
@@ -90,6 +89,14 @@ def _(segment_end, context):
 
 @draw.register(Segment)
 def _(segment, context):
+    stroke = segment.stroke
+    pen = Pen(stroke.width, stroke.color, 1, segment.tilt, segment.pressure)
+    pen = STROKE_PEN[stroke.pen](pen)
+    color = STROKE_COLOR[pen.color] + (pen.opacity,)
+
+    context.set_source_rgba(*color)
+    context.set_line_width(pen.width)
+
     context.line_to(segment.x, segment.y)
 
 @contextmanager

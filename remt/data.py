@@ -23,6 +23,9 @@ Page = namedtuple('Page', ['number'])
 Layer = namedtuple('Layer', ['number'])
 Stroke = namedtuple('Stroke', ['number', 'pen', 'color', 'width'])
 StrokeEnd = namedtuple('StrokeEnd', ['number'])
-Segment = namedtuple('Segment', ['number',  'x', 'y', 'pressure', 'tilt'])
+Segment = namedtuple(
+    'Segment',
+    ['number', 'stroke', 'x', 'y', 'pressure', 'tilt']
+)
 
 # vim: sw=4:et:ai
