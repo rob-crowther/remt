@@ -81,6 +81,8 @@ def _(stroke, context):
 
     context.set_source_rgba(*color)
     context.set_line_width(pen.width)
+    # round line join is important with thicker lines
+    context.set_line_join(cairo.LINE_JOIN_ROUND)
 
 @draw.register(StrokeEnd)
 def _(segment_end, context):
