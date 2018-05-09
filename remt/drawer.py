@@ -82,6 +82,8 @@ def _(stroke, context):
 
     # round line join is important with thicker lines
     context.set_line_join(cairo.LINE_JOIN_ROUND)
+    # TODO: not for highlighter
+    context.set_line_cap(cairo.LINE_CAP_ROUND)
 
 @draw.register(StrokeEnd)
 def _(segment_end, context):
