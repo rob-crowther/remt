@@ -106,3 +106,5 @@ async def cmd_ls():
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(cmd_ls())
+
+# vim: sw=4:et:ai
