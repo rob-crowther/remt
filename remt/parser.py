@@ -36,17 +36,11 @@ flatten = chain.from_iterable
 
 
 HEADER_START = b'reMarkable lines with selections and layers'
-FMT_HEADER_PAGE = '<{}sI'.format(len(HEADER_START))
-FMT_PAGE = '<BBH' # TODO might be 'I'
-FMT_LAYER = '<I'
-FMT_STROKE = '<IIIfI'
-FMT_SEGMENT = '<fffff'
-
-SIZE_HEADER_PAGE = struct.calcsize(FMT_HEADER_PAGE)
-SIZE_PAGE = struct.calcsize(FMT_PAGE)
-SIZE_LAYER = struct.calcsize(FMT_LAYER)
-SIZE_STROKE = struct.calcsize(FMT_STROKE)
-SIZE_SEGMENT = struct.calcsize(FMT_SEGMENT)
+FMT_HEADER_PAGE = struct.Struct('<{}sI'.format(len(HEADER_START)))
+FMT_PAGE = struct.Struct('<BBH') # TODO might be 'I'
+FMT_LAYER = struct.Struct('<I')
+FMT_STROKE = struct.Struct('<IIIfI')
+FMT_SEGMENT = struct.Struct('<fffff')
 
 
 RStroke = namedtuple('RStroke', ['number', 'pen', 'color', 'width'])
@@ -56,12 +50,23 @@ RSegment = namedtuple(
 )
 
 
+def parse_bytes(fmt, fin):
+    """
+    Read number of bytes from a file and parse the data with a struct
+    format.
+
+    :param fmt: Struct format object.
+    :param fin: File object.
+    """
+    buff = fin.read(fmt.size)
+    return fmt.unpack(buff)
+
 def parse_segment(stroke, n_seg, data):
-    x, y, pressure, tilt, _ = struct.unpack_from(FMT_SEGMENT, data.read(SIZE_SEGMENT))
+    x, y, pressure, tilt, _ = parse_bytes(FMT_SEGMENT, data)
     return RSegment(stroke, n_seg, x, y, pressure, tilt)
 
 def parse_stroke(n_stroke, data):
-    pen, color, _, width, n = struct.unpack(FMT_STROKE, data.read(SIZE_STROKE))
+    pen, color, _, width, n = parse_bytes(FMT_STROKE, data)
 
     stroke = RStroke(n_stroke, pen, color, width)
     items = (parse_segment(stroke, i, data) for i in range(n))
@@ -71,7 +76,7 @@ def parse_stroke(n_stroke, data):
     yield StrokeEnd(n_stroke)
 
 def parse_layer(n_layer, data):
-    n, = struct.unpack_from(FMT_LAYER, data.read(SIZE_LAYER))
+    n, = parse_bytes(FMT_LAYER, data)
 
     items = (parse_stroke(i, data) for i in range(n))
 
@@ -79,7 +84,7 @@ def parse_layer(n_layer, data):
     yield from flatten(items)
     
 def parse_page(n_page, data):
-    n, _, _ = struct.unpack_from(FMT_PAGE, data.read(SIZE_PAGE))
+    n, _, _ = parse_bytes(FMT_PAGE, data)
     items = (parse_layer(i, data) for i in range(n))
 
     yield Page(n_page)
@@ -135,7 +140,7 @@ def to_seg(segment):
         if is_seg(segment) else segment
 
 def parse(data):
-    header, n = struct.unpack_from(FMT_HEADER_PAGE, data.read(SIZE_HEADER_PAGE))
+    header, n = parse_bytes(FMT_HEADER_PAGE, data)
     assert header == HEADER_START
 
     # split existing strokes if necessary
