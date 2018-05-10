@@ -33,35 +33,73 @@ WIDTH = 1404
 HEIGHT = 1872
 
 STROKE_COLOR = {
-    0: (0, 0, 0),
-    1: (128, 128, 128),
-    2: (255, 255, 255),
+    0: Color(0, 0, 0, 1),
+    1: Color(0.5, 0.5, 0.5, 1),
+    2: Color(1, 1, 1, 1),
 }
 
-STROKE_PEN = {
-    0: lambda v: v._replace(
-        width=(5 * v.tilt) * (6 * v.width - 10) * (1 + 2 * v.pressure ** 3)
+STYLE = {
+    0: lambda st: Style(
+        (5 * st.tilt) * (6 * st.width - 10) * (1 + 2 * st.pressure ** 3),
+        STROKE_COLOR[st.color],
+        cairo.LINE_JOIN_ROUND,
+        cairo.LINE_CAP_ROUND,
     ),
-    1: lambda v: v._replace(
-        width=(10 * v.tilt - 2) * (8 * v.width - 14),
-        opacity=(v.pressure - 0.2) ** 2,
+    1: lambda st: Style(
+        (10 * st.tilt - 2) * (8 * st.width - 14),
+        STROKE_COLOR[st.color]._replace(alpha=(st.pressure - 0.2) ** 2),
+        cairo.LINE_JOIN_ROUND,
+        cairo.LINE_CAP_ROUND,
     ),
     # Pen / Fineliner
-    2: lambda v: v._replace(width=32 * v.width ** 2 - 116 * v.width + 107),
-    4: lambda v: v._replace(width=32 * v.width ** 2 - 116 * v.width + 107),
+    2: lambda st: Style(
+        32 * st.width ** 2 - 116 * st.width + 107,
+        STROKE_COLOR[st.color],
+        cairo.LINE_JOIN_ROUND,
+        cairo.LINE_CAP_ROUND,
+    ),
+    4: lambda st: Style(
+        32 * st.width ** 2 - 116 * st.width + 107,
+        STROKE_COLOR[st.color],
+        cairo.LINE_JOIN_ROUND,
+        cairo.LINE_CAP_ROUND,
+    ),
     # Marker
-    3: lambda v: v._replace(width=64 * v.width - 112, opacity=0.9),
+    3: lambda st: Style(
+        64 * st.width - 112,
+        STROKE_COLOR[st.color]._replace(alpha=0.9),
+        cairo.LINE_JOIN_ROUND,
+        cairo.LINE_CAP_ROUND,
+    ),
     # Highlighter
-    5: lambda v: v._replace(width=30, opacity=0.2),
+    5: lambda st: Style(
+        30,
+        STROKE_COLOR[st.color]._replace(alpha=0.2),
+        cairo.LINE_JOIN_ROUND,
+        cairo.LINE_CAP_SQUARE,
+    ),
     # Eraser
-    6: lambda v: v._replace(width=1280 * v.width ** 2 - 4800 * v.width + 4510, color=2),
+    6: lambda st: Style(
+        1280 * st.width ** 2 - 4800 * st.width + 4510,
+        STROKE_COLOR[2],
+        cairo.LINE_JOIN_ROUND,
+        cairo.LINE_CAP_ROUND,
+    ),
     # Pencil-Sharp
-    7: lambda v: v._replace(width=16 * v.width - 27, opacity=0.9),
+    7: lambda st: Style(
+        16 * st.width - 27,
+        STROKE_COLOR[st.color]._replace(alpha=0.9),
+        cairo.LINE_JOIN_ROUND,
+        cairo.LINE_CAP_ROUND,
+    ),
     # Erase area
-    8: lambda v: v._replace(opacity=0),
+    8: lambda st: Style(
+        st.width,
+        STROKE_COLOR[st.color]._replace(alpha=0),
+        cairo.LINE_JOIN_ROUND,
+        cairo.LINE_CAP_ROUND,
+    ),
 }
-
-Pen = namedtuple('Pen', ['width', 'color', 'opacity', 'tilt', 'pressure'])
 
 
 @singledispatch
@@ -80,10 +118,16 @@ def _(layer, context):
 def _(stroke, context):
     context.new_path()
 
+    style = stroke.style
+    context.set_line_width(style.width)
+    context.set_source_rgba(*style.color)
+    context.set_line_join(style.join)
+    context.set_line_cap(style.cap)
+
     # round line join is important with thicker lines
-    context.set_line_join(cairo.LINE_JOIN_ROUND)
+    #context.set_line_join(cairo.LINE_JOIN_ROUND)
     # TODO: not for highlighter
-    context.set_line_cap(cairo.LINE_CAP_ROUND)
+    #context.set_line_cap(cairo.LINE_CAP_ROUND)
 
 @draw.register(StrokeEnd)
 def _(segment_end, context):
@@ -91,14 +135,6 @@ def _(segment_end, context):
 
 @draw.register(Segment)
 def _(segment, context):
-    stroke = segment.stroke
-    pen = Pen(stroke.width, stroke.color, 1, segment.tilt, segment.pressure)
-    pen = STROKE_PEN[stroke.pen](pen)
-    color = STROKE_COLOR[pen.color] + (pen.opacity,)
-
-    context.set_source_rgba(*color)
-    context.set_line_width(pen.width)
-
     context.line_to(segment.x, segment.y)
 
 @contextmanager
@@ -110,5 +146,15 @@ def draw_context(fn):
     finally:
         surface.finish()
 
+
+@singledispatch
+def reset_style(item):
+    return item
+
+@reset_style.register(Stroke)
+def _(stroke):
+    color = STROKE_COLOR[stroke.color]
+    style = STYLE[stroke.pen](stroke)
+    return stroke._replace(style=style)
 
 # vim: sw=4:et:ai

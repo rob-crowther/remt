@@ -17,18 +17,29 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from collections import namedtuple
+"""
+reMarkable table lines parser unit tests.
+"""
 
-Page = namedtuple('Page', ['number'])
-Layer = namedtuple('Layer', ['number'])
-Stroke = namedtuple(
-    'Stroke',
-    ['number', 'pen', 'color', 'width', 'pressure', 'tilt', 'style']
-)
-StrokeEnd = namedtuple('StrokeEnd', ['number'])
-Segment = namedtuple('Segment', ['number', 'x', 'y'])
+import remt.parser as r_parser
 
-Style = namedtuple('Style', ['width', 'color', 'join', 'cap'])
-Color = namedtuple('Color', ['red', 'green', 'blue', 'alpha'])
+def test_inject_into_none():
+    """
+    Test injecting into a stream of items when nothing to do.
+    """
+    items = [1, 2, 3, 4, 5]
+    result = r_parser.inject_into(int.__eq__, None, items)
+    result = list(result)
+    assert [1, 2, 3, 4, 5] == result
+
+def test_inject_into():
+    """
+    Test injecting into a stream of items.
+    """
+    items = [1, 2, 3, 3, 4, 5]
+    inject = lambda v1, v2: [v1, -1]
+    result = r_parser.inject_into(int.__eq__, inject, items)
+    result = list(result)
+    assert [1, 2, 3, -1, 3, 4, 5] == result
 
 # vim: sw=4:et:ai

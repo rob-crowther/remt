@@ -17,9 +17,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from .drawer import draw_context, draw
+from .drawer import draw_context, draw, reset_style
 from .parser import parse
 
-__all__ = ['draw_context', 'draw', 'parse']
+__all__ = ['draw_context', 'reset_style', 'draw', 'parse']
 
 # vim: sw=4:et:ai
