@@ -125,7 +125,8 @@ def draw(item, context):
 
 @draw.register(Page)
 def _(page, context):
-    pass
+    if page.number:
+        context.show_page()
 
 @draw.register(Layer)
 def _(layer, context):
