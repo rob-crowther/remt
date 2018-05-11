@@ -21,9 +21,11 @@
 import asyncio
 import asyncssh
 import configparser
+import glob
 import json
 import os
 import os.path
+from tempfile import TemporaryDirectory
 
 
 BASE_DIR = '/home/root/.local/share/remarkable/xochitl/'
@@ -33,9 +35,7 @@ FILE_TYPE = {
 }
 
 
-async def exec(*args):
-    cmd = ' '.join('{}'.format(v) for v in args)
-
+async def fetch(fn, dest):
     conf_file = os.path.join(os.environ['HOME'], '.config', 'remt.ini')
     cp = configparser.ConfigParser()
     cp.read(conf_file)
@@ -46,36 +46,17 @@ async def exec(*args):
 
     ctx = asyncssh.connect(host, username=user, password=password)
     async with ctx as conn:
-        result = await conn.run(cmd, check=True)
-        return result.stdout
-
-
-async def list_meta():
-    data = await exec('ls', BASE_DIR + '*.metadata')
-    items = data.split('\n')
-    items = (v.replace(BASE_DIR, '') for v in items)
-    items = (v for v in items if v)
-    return items
-
-
-async def read_file(name):
-    data = await exec('cat', BASE_DIR + name)
-    return data
-
+        await asyncssh.scp((conn, fn), dest, preserve=True, recurse=True)
 
 async def read_meta():
-    files = await list_meta()
-    files = (fn.replace('.metadata', '') for fn in files)
+    with TemporaryDirectory() as dest:
+        await fetch(BASE_DIR + '*.metadata', dest)
 
-    # read all metadata in one go for speed; note that this depends on the
-    # order of files returned by `list_meta`
-    data = await read_file('*.metadata')
-    data = data.replace('\n', '')
-    data = data.replace('}{', '},{')
-    data = '[' + data + ']'
-    data = json.loads(data)
-    return {fn: v for fn, v in zip(files, data)}
-
+        files = glob.glob(dest + '/*.metadata')
+        uuids = (os.path.basename(v) for v in files)
+        uuids = (v.replace('.metadata', '') for v in uuids)
+        data = (json.load(open(fn)) for fn in files)
+        return {fn: v for fn, v in zip(uuids, data)}
 
 def get_fn(data, meta):
     parent = data.get('parent')
@@ -85,14 +66,11 @@ def get_fn(data, meta):
     else:
         return name
         
-
 def resolve_uuid(meta):
     return {get_fn(data, meta): data for data in meta.values()}
 
-
 def marker(cond, marker):
     return marker if cond else '-'
-
 
 async def cmd_ls():
     meta = await read_meta()
