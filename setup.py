@@ -49,7 +49,7 @@ reMarkable tablet tools
     ],
     keywords='remarkable tools',
     license='GPL',
-    install_requires=['cytoolz',  'pycairo'],
+    install_requires=['cytoolz',  'pycairo', 'asyncssh'],
 )
 
 # vim: sw=4:et:ai
