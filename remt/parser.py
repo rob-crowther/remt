@@ -76,6 +76,7 @@ def parse_page(n_page, data):
 
     yield Page(n_page)
     yield from flatten(items)
+    yield PageEnd(n_page)
 
 def parse(data):
     header, n = parse_item(FMT_HEADER_PAGE, data)

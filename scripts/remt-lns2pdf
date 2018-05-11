@@ -22,8 +22,8 @@ import argparse
 import remt
 
 parser = argparse.ArgumentParser(description="""\
-Convert reMarkable table lines file to a PDF file. Optionally, annotate a
-PDF file with the lines file.
+Convert reMarkable table lines file to a PDF file. Optionally, annotate
+a PDF file with the lines file.
 """)
 
 parser.add_argument('input', help='reMarkable table lines file')
@@ -37,7 +37,7 @@ parser.add_argument('output', help='PDF output file')
 args = parser.parse_args()
 
 with open(args.input, 'rb') as f, \
-        remt.draw_context(args.output) as ctx:
+        remt.draw_context(args.in_pdf, args.output) as ctx:
 
     for item in remt.parse(f):
         remt.draw(item, ctx)

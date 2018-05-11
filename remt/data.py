@@ -20,6 +20,7 @@
 from collections import namedtuple
 
 Page = namedtuple('Page', ['number'])
+PageEnd = namedtuple('PageEnd', ['number'])
 Layer = namedtuple('Layer', ['number'])
 Stroke = namedtuple(
     'Stroke',
@@ -29,5 +30,6 @@ Segment = namedtuple('Segment', ['number', 'x', 'y', 'pressure', 'tilt'])
 
 Style = namedtuple('Style', ['width', 'color', 'join', 'cap'])
 Color = namedtuple('Color', ['red', 'green', 'blue', 'alpha'])
+Context = namedtuple('Context', ['cr_surface', 'cr_ctx', 'pdf_doc'])
 
 # vim: sw=4:et:ai

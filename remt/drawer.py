@@ -21,11 +21,16 @@
 reMarkable strokes drawing using Cairo library.
 """
 
+import gi
+gi.require_version('Poppler', '0.18')
+
 import cairo
 import logging
+import pathlib
 from collections import namedtuple
 from contextlib import contextmanager
 from functools import singledispatch
+from gi.repository import Poppler
 
 from .data import *
 
@@ -125,8 +130,28 @@ def draw(item, context):
 
 @draw.register(Page)
 def _(page, context):
+    surface = context.cr_surface
     if page.number:
-        context.show_page()
+        surface.show_page()
+
+    if context.pdf_doc:
+        pdf_page = context.pdf_doc.get_page(page.number)
+        w, h = pdf_page.get_size()
+
+        cr = context.cr_ctx
+        surface.set_size(w, h)
+        cr.save()
+        pdf_page.render(cr)
+        cr.restore()
+
+        cr.save()  # to be restored at page end
+        factor = max(w / WIDTH, h / HEIGHT)
+        cr.scale(factor, factor)
+
+@draw.register(PageEnd)
+def _(page, context):
+    if context.pdf_doc:
+        context.cr_ctx.restore()
 
 @draw.register(Layer)
 def _(layer, context):
@@ -140,32 +165,38 @@ def _(stroke, context):
         style = f(stroke)
     else:
         logger.debug('Not supported pen for stroke: {}'.format(stroke))
-        #style = STYLE_DEFAULT
-
         return
+
     # on new path, the position of point is undefined and first `line_to`
     # call acts as `move_to`
-    context.new_path()
+    cr = context.cr_ctx
+    cr.save()
+    cr.new_path()
 
-    context.set_line_width(style.width)
-    context.set_source_rgba(*style.color)
-    context.set_line_join(style.join)
-    context.set_line_cap(style.cap)
+    cr.set_line_width(style.width)
+    cr.set_source_rgba(*style.color)
+    cr.set_line_join(style.join)
+    cr.set_line_cap(style.cap)
 
     for seg in stroke.segments:
-        context.line_to(seg.x, seg.y)
+        cr.line_to(seg.x, seg.y)
 
-    # round line join is important with thicker lines
-    #context.set_line_join(cairo.LINE_JOIN_ROUND)
-    # TODO: not for highlighter
-    #context.set_line_cap(cairo.LINE_CAP_ROUND)
-    context.stroke()
+    cr.stroke()
+    cr.restore()
 
 @contextmanager
-def draw_context(fn):
-    surface = cairo.PDFSurface(fn, WIDTH, HEIGHT)
+def draw_context(fn_pdf, fn_out):
+    factor = 1
+
+    pdf_doc = None
+    if fn_pdf:
+        pdf_path = pathlib.Path(fn_pdf).resolve().as_uri()
+        pdf_doc = Poppler.Document.new_from_file(pdf_path)
+
+    surface = cairo.PDFSurface(fn_out, WIDTH, HEIGHT)
     try:
-        context = cairo.Context(surface)
+        cr_ctx = cairo.Context(surface)
+        context = Context(surface, cr_ctx, pdf_doc)
         yield context
     finally:
         surface.finish()
