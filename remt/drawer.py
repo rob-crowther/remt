@@ -22,6 +22,7 @@ reMarkable strokes drawing using Cairo library.
 """
 
 import cairo
+import logging
 from collections import namedtuple
 from contextlib import contextmanager
 from functools import singledispatch
@@ -29,73 +30,89 @@ from functools import singledispatch
 from .data import *
 
 
+logger = logging.getLogger(__name__)
+
+
 WIDTH = 1404
 HEIGHT = 1872
 
-STROKE_COLOR = {
+COLOR_STROKE = {
     0: Color(0, 0, 0, 1),
     1: Color(0.5, 0.5, 0.5, 1),
     2: Color(1, 1, 1, 1),
 }
 
+COLOR_HIGHLIGHTER = Color(1.0, 0.8039, 0.0, 0.1)
+
+STYLE_DEFAULT = Style(
+    1,
+    COLOR_STROKE[0],
+    cairo.LINE_JOIN_ROUND,
+    cairo.LINE_CAP_ROUND,
+)
+
+STYLE_HIGHLIGHTER = Style(
+    30,
+    COLOR_HIGHLIGHTER,
+    cairo.LINE_JOIN_ROUND,
+    cairo.LINE_CAP_SQUARE,
+)
+
+
 STYLE = {
-    0: lambda st: Style(
-        (5 * st.tilt) * (6 * st.width - 10) * (1 + 2 * st.pressure ** 3),
-        STROKE_COLOR[st.color],
-        cairo.LINE_JOIN_ROUND,
-        cairo.LINE_CAP_ROUND,
-    ),
-    1: lambda st: Style(
-        (10 * st.tilt - 2) * (8 * st.width - 14),
-        STROKE_COLOR[st.color]._replace(alpha=(st.pressure - 0.2) ** 2),
-        cairo.LINE_JOIN_ROUND,
-        cairo.LINE_CAP_ROUND,
-    ),
-    # Pen / Fineliner
-    2: lambda st: Style(
-        32 * st.width ** 2 - 116 * st.width + 107,
-        STROKE_COLOR[st.color],
-        cairo.LINE_JOIN_ROUND,
-        cairo.LINE_CAP_ROUND,
-    ),
+#0: lambda st: Style(
+#    (5 * st.tilt) * (6 * st.width - 10) * (1 + 2 * st.pressure ** 3),
+#    COLOR_STROKE[st.color],
+#    cairo.LINE_JOIN_ROUND,
+#    cairo.LINE_CAP_ROUND,
+#),
+#1: lambda st: Style(
+#    (10 * st.tilt - 2) * (8 * st.width - 14),
+#    COLOR_STROKE[st.color]._replace(alpha=(st.pressure - 0.2) ** 2),
+#    cairo.LINE_JOIN_ROUND,
+#    cairo.LINE_CAP_ROUND,
+#),
+    # Pen
+#   2: lambda st: Style(
+#       32 * st.width ** 2 - 116 * st.width + 107,
+#       COLOR_STROKE[st.color],
+#       cairo.LINE_JOIN_ROUND,
+#       cairo.LINE_CAP_ROUND,
+#   ),
+    # Fineliner
     4: lambda st: Style(
         32 * st.width ** 2 - 116 * st.width + 107,
-        STROKE_COLOR[st.color],
+        COLOR_STROKE[st.color],
         cairo.LINE_JOIN_ROUND,
         cairo.LINE_CAP_ROUND,
     ),
-    # Marker
-    3: lambda st: Style(
-        64 * st.width - 112,
-        STROKE_COLOR[st.color]._replace(alpha=0.9),
-        cairo.LINE_JOIN_ROUND,
-        cairo.LINE_CAP_ROUND,
-    ),
+#   # Marker
+#   3: lambda st: Style(
+#       64 * st.width - 112,
+#       COLOR_STROKE[st.color]._replace(alpha=0.9),
+#       cairo.LINE_JOIN_ROUND,
+#       cairo.LINE_CAP_ROUND,
+#   ),
     # Highlighter
-    5: lambda st: Style(
-        30,
-        STROKE_COLOR[st.color]._replace(alpha=0.2),
-        cairo.LINE_JOIN_ROUND,
-        cairo.LINE_CAP_SQUARE,
-    ),
+    5: lambda st: STYLE_HIGHLIGHTER,
     # Eraser
     6: lambda st: Style(
         1280 * st.width ** 2 - 4800 * st.width + 4510,
-        STROKE_COLOR[2],
+        COLOR_STROKE[2],
         cairo.LINE_JOIN_ROUND,
         cairo.LINE_CAP_ROUND,
     ),
-    # Pencil-Sharp
+    # Pencil - Sharp
     7: lambda st: Style(
         16 * st.width - 27,
-        STROKE_COLOR[st.color]._replace(alpha=0.9),
+        COLOR_STROKE[st.color],
         cairo.LINE_JOIN_ROUND,
         cairo.LINE_CAP_ROUND,
     ),
     # Erase area
     8: lambda st: Style(
         st.width,
-        STROKE_COLOR[st.color]._replace(alpha=0),
+        COLOR_STROKE[st.color]._replace(alpha=0),
         cairo.LINE_JOIN_ROUND,
         cairo.LINE_CAP_ROUND,
     ),
@@ -116,26 +133,32 @@ def _(layer, context):
 
 @draw.register(Stroke)
 def _(stroke, context):
+    color = COLOR_STROKE[stroke.color]
+    f = STYLE.get(stroke.pen)
+    if f is not None:
+        style = f(stroke)
+    else:
+        logger.debug('Not supported pen for stroke: {}'.format(stroke))
+        #style = STYLE_DEFAULT
+
+        return
+    # on new path, the position of point is undefined and first `line_to`
+    # call acts as `move_to`
     context.new_path()
 
-    style = stroke.style
     context.set_line_width(style.width)
     context.set_source_rgba(*style.color)
     context.set_line_join(style.join)
     context.set_line_cap(style.cap)
 
+    for seg in stroke.segments:
+        context.line_to(seg.x, seg.y)
+
     # round line join is important with thicker lines
     #context.set_line_join(cairo.LINE_JOIN_ROUND)
     # TODO: not for highlighter
     #context.set_line_cap(cairo.LINE_CAP_ROUND)
-
-@draw.register(StrokeEnd)
-def _(segment_end, context):
     context.stroke()
-
-@draw.register(Segment)
-def _(segment, context):
-    context.line_to(segment.x, segment.y)
 
 @contextmanager
 def draw_context(fn):
@@ -145,16 +168,5 @@ def draw_context(fn):
         yield context
     finally:
         surface.finish()
-
-
-@singledispatch
-def reset_style(item):
-    return item
-
-@reset_style.register(Stroke)
-def _(stroke):
-    color = STROKE_COLOR[stroke.color]
-    style = STYLE[stroke.pen](stroke)
-    return stroke._replace(style=style)
 
 # vim: sw=4:et:ai

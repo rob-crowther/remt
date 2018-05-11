@@ -39,8 +39,8 @@ setup(
 reMarkable tablet tools
 
 - list device files
-- get documents as PDF file
 - put a PDF file onto a device
+- get notes and annotated PDF documents
 """,
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
@@ -49,7 +49,7 @@ reMarkable tablet tools
     ],
     keywords='remarkable tools',
     license='GPL',
-    install_requires=['cytoolz',  'pycairo', 'asyncssh'],
+    install_requires=['pycairo', 'asyncssh'],
 )
 
 # vim: sw=4:et:ai

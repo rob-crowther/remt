@@ -25,10 +25,6 @@ import math
 import struct
 from collections import namedtuple
 from itertools import chain
-from functools import partial
-from cytoolz.functoolz import pipe
-from cytoolz.itertoolz import sliding_window
-from cytoolz.curried import map
 
 from .data import *
 
@@ -43,17 +39,10 @@ FMT_STROKE = struct.Struct('<IIIfI')
 FMT_SEGMENT = struct.Struct('<fffff')
 
 
-RStroke = namedtuple('RStroke', ['number', 'pen', 'color', 'width'])
-RSegment = namedtuple(
-    'RSegment',
-    ['stroke', 'number', 'x', 'y', 'pressure', 'tilt']
-)
-
-
-def parse_bytes(fmt, fin):
+def parse_item(fmt, fin):
     """
-    Read number of bytes from a file and parse the data with a struct
-    format.
+    Read number of bytes from a file and parse the data of a drawing item
+    using a format.
 
     :param fmt: Struct format object.
     :param fin: File object.
@@ -61,22 +50,20 @@ def parse_bytes(fmt, fin):
     buff = fin.read(fmt.size)
     return fmt.unpack(buff)
 
-def parse_segment(stroke, n_seg, data):
-    x, y, pressure, tilt, _ = parse_bytes(FMT_SEGMENT, data)
-    return RSegment(stroke, n_seg, x, y, pressure, tilt)
+def parse_segment(n_seg, data):
+    x, y, pressure, tilt, _ = parse_item(FMT_SEGMENT, data)
+    return Segment(n_seg, x, y, pressure, tilt)
 
 def parse_stroke(n_stroke, data):
-    pen, color, _, width, n = parse_bytes(FMT_STROKE, data)
+    pen, color, _, width, n = parse_item(FMT_STROKE, data)
 
-    stroke = RStroke(n_stroke, pen, color, width)
-    items = (parse_segment(stroke, i, data) for i in range(n))
+    segments = [parse_segment(i, data) for i in range(n)]
+    stroke = Stroke(n_stroke, pen, color, width, segments)
 
     yield stroke
-    yield from items
-    yield StrokeEnd(n_stroke)
 
 def parse_layer(n_layer, data):
-    n, = parse_bytes(FMT_LAYER, data)
+    n, = parse_item(FMT_LAYER, data)
 
     items = (parse_stroke(i, data) for i in range(n))
 
@@ -84,72 +71,17 @@ def parse_layer(n_layer, data):
     yield from flatten(items)
     
 def parse_page(n_page, data):
-    n, _, _ = parse_bytes(FMT_PAGE, data)
+    n, _, _ = parse_item(FMT_PAGE, data)
     items = (parse_layer(i, data) for i in range(n))
 
     yield Page(n_page)
     yield from flatten(items)
 
-def inject_into(cond, func, items):
-    """
-    Inject new items into stream of items.
-
-    The `cond` and `func` functions accept two parameters - current and
-    next item.
-
-    :param cond: Function to check if new items should be injected.
-    :param func: Function to generate new items.
-    :param items: Stream of items.
-    """
-    for v1, v2 in sliding_window(2, items):
-        if cond(v1, v2):
-            yield from func(v1, v2)
-        else:
-            yield v1
-    yield v2
-
-def is_new_stroke(s1, s2):
-    return isinstance(s1, RSegment) and isinstance(s2, RSegment) \
-        and s1.stroke.pen in (0, 1) \
-        and not (
-            math.isclose(s1.pressure, s2.pressure)
-            and math.isclose(s1.tilt, s2.tilt)
-        )
-
-def new_stroke(s1, s2):
-    s = s1.stroke
-    stroke = RStroke(None, s.pen, s.color, s.width)
-    yield s1
-    yield s2
-    yield StrokeEnd(None)
-    yield stroke
-
-def is_stroke_change(s1, s2):
-    return isinstance(s1, RStroke) and isinstance(s2, RSegment)
-
-def to_stroke(s1, s2):
-    yield Stroke(
-        s1.number, s1.pen, s1.color, s1.width, s2.pressure, s2.tilt, None
-    )
-
-def is_seg(segment):
-    return isinstance(segment, RSegment)
-
-def to_seg(segment):
-    return Segment(segment.number, segment.x, segment.y) \
-        if is_seg(segment) else segment
-
 def parse(data):
-    header, n = parse_bytes(FMT_HEADER_PAGE, data)
+    header, n = parse_item(FMT_HEADER_PAGE, data)
     assert header == HEADER_START
 
-    # split existing strokes if necessary
-    reset_stroke = partial(inject_into, is_new_stroke, new_stroke)
-    convert_stroke = partial(inject_into, is_stroke_change, to_stroke)
-    convert_seg = map(to_seg)
-
     items = (parse_page(i, data) for i in range(n))
-    items = pipe(items, flatten, reset_stroke, convert_stroke, convert_seg)
-    yield from items
+    yield from flatten(items)
 
 # vim: sw=4:et:ai

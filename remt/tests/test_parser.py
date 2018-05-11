@@ -21,25 +21,20 @@
 reMarkable table lines parser unit tests.
 """
 
+import io
 import remt.parser as r_parser
 
-def test_inject_into_none():
+def test_parse_item():
     """
-    Test injecting into a stream of items when nothing to do.
+    Test parsing of a drawing item.
     """
-    items = [1, 2, 3, 4, 5]
-    result = r_parser.inject_into(int.__eq__, None, items)
-    result = list(result)
-    assert [1, 2, 3, 4, 5] == result
+    # add some trailing bytes, which shall be not read
+    data = io.BytesIO(b'\x01\x02\x03\x04\x00\xff')
+    result = r_parser.parse_item(r_parser.FMT_LAYER, data)
+    assert (0x04030201,) == result
 
-def test_inject_into():
-    """
-    Test injecting into a stream of items.
-    """
-    items = [1, 2, 3, 3, 4, 5]
-    inject = lambda v1, v2: [v1, -1]
-    result = r_parser.inject_into(int.__eq__, inject, items)
-    result = list(result)
-    assert [1, 2, 3, -1, 3, 4, 5] == result
+    # still possible to read the rest of the data
+    remaining = data.read()
+    assert b'\x00\xff' == remaining
 
 # vim: sw=4:et:ai

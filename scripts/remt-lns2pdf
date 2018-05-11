@@ -19,9 +19,6 @@
 #
 
 import argparse
-from cytoolz.functoolz import pipe
-from cytoolz.curried import map
-
 import remt
 
 parser = argparse.ArgumentParser(description="""\
@@ -42,8 +39,7 @@ args = parser.parse_args()
 with open(args.input, 'rb') as f, \
         remt.draw_context(args.output) as ctx:
 
-    items = pipe(f, remt.parse, map(remt.reset_style))
-    for item in items:
+    for item in remt.parse(f):
         remt.draw(item, ctx)
 
 # vim: sw=4:et:ai

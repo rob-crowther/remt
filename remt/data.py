@@ -23,10 +23,9 @@ Page = namedtuple('Page', ['number'])
 Layer = namedtuple('Layer', ['number'])
 Stroke = namedtuple(
     'Stroke',
-    ['number', 'pen', 'color', 'width', 'pressure', 'tilt', 'style']
+    ['number', 'pen', 'color', 'width', 'segments']
 )
-StrokeEnd = namedtuple('StrokeEnd', ['number'])
-Segment = namedtuple('Segment', ['number', 'x', 'y'])
+Segment = namedtuple('Segment', ['number', 'x', 'y', 'pressure', 'tilt'])
 
 Style = namedtuple('Style', ['width', 'color', 'join', 'cap'])
 Color = namedtuple('Color', ['red', 'green', 'blue', 'alpha'])
