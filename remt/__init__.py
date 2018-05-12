@@ -20,6 +20,8 @@
 from .drawer import draw_context, draw
 from .parser import parse
 
-__all__ = ['draw_context', 'draw', 'parse']
+__version__ = '0.0.1'
+
+__all__ = ['draw_context', 'draw', 'parse', '__version__']
 
 # vim: sw=4:et:ai
