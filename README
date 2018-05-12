@@ -5,7 +5,7 @@ Features
 - list files on a reMarkable tablet
 - get a notebook or an annotated PDF document from a reMarkable tablet
 - fineliner
-- sharp pencil
+- sharp pencil with pencil brush
 - highlighter
 - eraser
 
@@ -13,7 +13,7 @@ What does not work yet
 
 - ballpoint
 - marker
-- pencil brush is missing
+- make pencil brush more like the one on reMarkable tablet
 - tilt pencil
 - brush
 

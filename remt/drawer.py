@@ -25,11 +25,14 @@ import gi
 gi.require_version('Poppler', '0.18')
 
 import cairo
+import io
 import logging
+import os.path
 import pathlib
+import pkgutil
 from collections import namedtuple
 from contextlib import contextmanager
-from functools import singledispatch
+from functools import singledispatch, lru_cache, partial
 from gi.repository import Poppler
 
 from .data import *
@@ -54,6 +57,7 @@ STYLE_DEFAULT = Style(
     COLOR_STROKE[0],
     cairo.LINE_JOIN_ROUND,
     cairo.LINE_CAP_ROUND,
+    None,
 )
 
 STYLE_HIGHLIGHTER = Style(
@@ -61,6 +65,7 @@ STYLE_HIGHLIGHTER = Style(
     COLOR_HIGHLIGHTER,
     cairo.LINE_JOIN_ROUND,
     cairo.LINE_CAP_SQUARE,
+    None
 )
 
 
@@ -90,6 +95,7 @@ STYLE = {
         COLOR_STROKE[st.color],
         cairo.LINE_JOIN_ROUND,
         cairo.LINE_CAP_ROUND,
+        None,
     ),
 #   # Marker
 #   3: lambda st: Style(
@@ -106,6 +112,7 @@ STYLE = {
         COLOR_STROKE[2],
         cairo.LINE_JOIN_ROUND,
         cairo.LINE_CAP_ROUND,
+        None,
     ),
     # Pencil - Sharp
     7: lambda st: Style(
@@ -113,6 +120,7 @@ STYLE = {
         COLOR_STROKE[st.color],
         cairo.LINE_JOIN_ROUND,
         cairo.LINE_CAP_ROUND,
+        'pencil.png',
     ),
     # Erase area
     8: lambda st: Style(
@@ -120,9 +128,21 @@ STYLE = {
         COLOR_STROKE[st.color]._replace(alpha=0),
         cairo.LINE_JOIN_ROUND,
         cairo.LINE_CAP_ROUND,
+        None,
     ),
 }
 
+
+path_brush = partial(os.path.join, 'brush')
+
+
+@lru_cache(maxsize=4)
+def load_brush(fn):
+    data = pkgutil.get_data('remt', path_brush(fn))
+    img = cairo.ImageSurface.create_from_png(io.BytesIO(data))
+    brush = cairo.SurfacePattern(img)
+    brush.set_extend(cairo.EXTEND_REPEAT)
+    return brush
 
 @singledispatch
 def draw(item, context):
@@ -181,6 +201,10 @@ def _(stroke, context):
 
     for seg in stroke.segments:
         cr.line_to(seg.x, seg.y)
+
+    if style.brush:
+        brush = load_brush(style.brush)
+        cr.set_source(brush)
 
     cr.stroke()
     cr.restore()
