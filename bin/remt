@@ -23,6 +23,11 @@ import asyncio
 
 import remt.cmd
 
+COMMANDS = {
+    'ls': remt.cmd.cmd_ls,
+    'get': remt.cmd.cmd_get,
+}
+
 desc = 'remt - reMarkable tablet tools'
 
 parser = argparse.ArgumentParser(description=desc)
@@ -30,6 +35,13 @@ main_parser = parser.add_subparsers(dest='subcmd')
 
 # command: ls
 sub_parser = main_parser.add_parser('ls')
+sub_parser.add_argument(
+    '-l',
+    dest='long',
+    action='store_true',
+    default=False,
+    help='Use long listing format',
+)
 
 # command: get
 sub_parser = main_parser.add_parser('get')
@@ -38,16 +50,12 @@ sub_parser.add_argument('output', help='Output filename')
 
 args = parser.parse_args()
 
-if args.subcmd == 'ls':
-    cmd = remt.cmd.cmd_ls()
-elif args.subcmd == 'get':
-    cmd = remt.cmd.cmd_get(args.input, args.output)
-else:
+cmd = COMMANDS.get(args.subcmd)
+if cmd is None:
     parser.print_usage()
     parser.exit()
 
-
 loop = asyncio.get_event_loop()
-loop.run_until_complete(cmd)
+loop.run_until_complete(cmd(args))
 
 # vim: sw=4:et:ai

@@ -17,6 +17,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+"""
+Command line commands unit tests.
+"""
+
 from remt import cmd as r_cmd
 
 
@@ -27,5 +31,24 @@ def test_fn_path():
     meta = {'uuid': 'xyz'}
     result = r_cmd.fn_path(meta, base='/x/y', ext='met')
     assert '/x/y/xyz.met' == result
+
+def test_ls_line():
+    """
+    Test creating `ls` command basic output line.
+    """
+    result = r_cmd.ls_line('a/b', None)
+    assert 'a/b' == result
+
+def test_ls_line_long():
+    """
+    Test creating `ls` command long output line.
+    """
+    meta = {
+        'pinned': True,
+        'bookmarked': True,
+        'type': 'CollectionType',
+    }
+    result = r_cmd.ls_line_long('a/b', meta)
+    assert 'db a/b' == result
 
 # vim: sw=4:et:ai

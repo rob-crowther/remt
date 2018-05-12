@@ -110,21 +110,35 @@ async def read_meta():
 def marker(cond, marker):
     return marker if cond else '-'
 
-async def cmd_ls():
+def ls_line(fn, data):
+    """
+    Create `ls` command basic output line.
+    """
+    return fn
+
+def ls_line_long(fn, data):
+    """
+    Create `ls` command long output line.
+    """
+    bookmarked = marker(data['pinned'] is True, 'b')
+    is_dir = marker(data['type'] == 'CollectionType', 'd')
+    line = '{}{} {}'.format(is_dir, bookmarked, fn)
+    return line
+
+async def cmd_ls(options):
     meta = await read_meta()
-    for fn, data in sorted(meta.items()):
-        bookmarked = marker(data['pinned'] is True, 'b')
-        is_dir = marker(data['type'] == 'CollectionType', 'd')
-        line = '{}{} {}'.format(is_dir, bookmarked, fn)
-        print(line)
+    to_line = ls_line_long if options.long else ls_line
+    lines = (to_line(k, v) for k, v in sorted(meta.items()))
+    print('\n'.join(lines))
+
 #
 # cmd: get
 #
 
-async def cmd_get(fn, fn_out):
+async def cmd_get(args):
     meta = await read_meta()
     with TemporaryDirectory() as dest:
-        data = meta[fn]
+        data = meta[args.input]  # TODO: handle non-existing file nicely
 
         to_copy = fn_path(data)
         await fetch(to_copy, dest)
@@ -133,7 +147,7 @@ async def cmd_get(fn, fn_out):
         fin_pdf = fn_path(data, base=dest, ext='pdf')
         fin_pdf = fin_pdf if os.path.exists(fin_pdf) else None
         with open(fin, 'rb') as f, \
-                remt.draw_context(fin_pdf, fn_out) as ctx:
+                remt.draw_context(fin_pdf, args.output) as ctx:
 
             for item in remt.parse(f):
                 remt.draw(item, ctx)
