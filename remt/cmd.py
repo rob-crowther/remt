@@ -27,6 +27,7 @@ import glob
 import json
 import os
 import os.path
+from datetime import datetime
 from tempfile import TemporaryDirectory
 from cytoolz.dicttoolz import assoc
 
@@ -122,7 +123,11 @@ def ls_line_long(fn, data):
     """
     bookmarked = marker(data['pinned'] is True, 'b')
     is_dir = marker(data['type'] == 'CollectionType', 'd')
-    line = '{}{} {}'.format(is_dir, bookmarked, fn)
+
+    tstamp = int(data['lastModified']) / 1000
+    tstamp = datetime.fromtimestamp(tstamp)
+
+    line = '{}{} {:%Y-%m-%d %H:%M:%S} {}'.format(is_dir, bookmarked, tstamp, fn)
     return line
 
 def ls_filter_path(meta, path):
