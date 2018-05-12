@@ -135,15 +135,16 @@ def _(page, context):
         surface.show_page()
 
     if context.pdf_doc:
+        # get page and set size of the current page of the cairo surface
         pdf_page = context.pdf_doc.get_page(page.number)
         w, h = pdf_page.get_size()
+        surface.set_size(w, h)
 
         cr = context.cr_ctx
-        surface.set_size(w, h)
-        cr.save()
-        pdf_page.render(cr)
-        cr.restore()
+        # render for printing to keep the quality of the document
+        pdf_page.render_for_printing(cr)
 
+        # render remarkable lines data at scale to fit the document
         cr.save()  # to be restored at page end
         factor = max(w / WIDTH, h / HEIGHT)
         cr.scale(factor, factor)
