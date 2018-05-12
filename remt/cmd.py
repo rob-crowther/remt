@@ -173,10 +173,10 @@ async def cmd_ls(options):
     print('\n'.join(lines))
 
 #
-# cmd: get
+# cmd: export
 #
 
-async def cmd_get(args):
+async def cmd_export(args):
     meta = await read_meta()
     with TemporaryDirectory() as dest:
         data = meta[args.input]  # TODO: handle non-existing file nicely
@@ -192,5 +192,11 @@ async def cmd_get(args):
 
             for item in remt.parse(f):
                 remt.draw(item, ctx)
+
+
+COMMANDS = {
+    'ls': cmd_ls,
+    'export': cmd_export,
+}
          
 # vim: sw=4:et:ai

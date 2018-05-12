@@ -23,11 +23,6 @@ import asyncio
 
 import remt.cmd
 
-COMMANDS = {
-    'ls': remt.cmd.cmd_ls,
-    'get': remt.cmd.cmd_get,
-}
-
 desc = 'remt - reMarkable tablet tools'
 
 parser = argparse.ArgumentParser(description=desc)
@@ -51,14 +46,14 @@ sub_parser.add_argument(
 )
 sub_parser.add_argument('path', nargs='?', help='Starting path')
 
-# command: get
-sub_parser = main_parser.add_parser('get')
+# command: export
+sub_parser = main_parser.add_parser('export')
 sub_parser.add_argument('input', help='Path of file to download')
 sub_parser.add_argument('output', help='Output filename')
 
 args = parser.parse_args()
 
-cmd = COMMANDS.get(args.subcmd)
+cmd = remt.cmd.COMMANDS.get(args.subcmd)
 if cmd is None:
     parser.print_usage()
     parser.exit()

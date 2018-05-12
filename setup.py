@@ -40,7 +40,7 @@ reMarkable tablet tools
 
 - list files on a reMarkable tablet
 - put a PDF file onto a reMarkable tablet
-- get a notebook or an annotated PDF document from a reMarkable tablet
+- export a notebook or an annotated PDF document from a reMarkable tablet
 """,
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
