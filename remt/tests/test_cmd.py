@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 #
 # remt - reMarkable tablet tools
 #
@@ -18,36 +17,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import argparse
-import asyncio
-
-import remt.cmd
-
-desc = 'remt - reMarkable tablet tools'
-
-parser = argparse.ArgumentParser(description=desc)
-main_parser = parser.add_subparsers(dest='subcmd')
-
-# command: ls
-sub_parser = main_parser.add_parser('ls')
-
-# command: get
-sub_parser = main_parser.add_parser('get')
-sub_parser.add_argument('input', help='Path of file to download')
-sub_parser.add_argument('output', help='Output filename')
-
-args = parser.parse_args()
-
-if args.subcmd == 'ls':
-    cmd = remt.cmd.cmd_ls()
-elif args.subcmd == 'get':
-    cmd = remt.cmd.cmd_get(args.input, args.output)
-else:
-    parser.print_usage()
-    parser.exit()
+from remt import cmd as r_cmd
 
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(cmd)
+def test_fn_path():
+    """
+    Test creating UUID based path from metadata.
+    """
+    meta = {'uuid': 'xyz'}
+    result = r_cmd.fn_path(meta, base='/x/y', ext='met')
+    assert '/x/y/xyz.met' == result
 
 # vim: sw=4:et:ai

@@ -38,9 +38,9 @@ setup(
 """\
 reMarkable tablet tools
 
-- list device files
-- put a PDF file onto a device
-- get notes and annotated PDF documents
+- list files on a reMarkable tablet
+- put a PDF file onto a reMarkable tablet
+- get a notebook or an annotated PDF document from a reMarkable tablet
 """,
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
@@ -49,7 +49,7 @@ reMarkable tablet tools
     ],
     keywords='remarkable tools',
     license='GPL',
-    install_requires=['pygobject', 'pycairo', 'asyncssh'],
+    install_requires=['pygobject', 'pycairo', 'asyncssh', 'cytoolz'],
 )
 
 # vim: sw=4:et:ai

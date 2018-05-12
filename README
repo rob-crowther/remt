@@ -1,6 +1,9 @@
+remt - reMarkable tablet tools.
+
 Features
 
-- list device files
+- list files on a reMarkable tablet
+- get a notebook or an annotated PDF document from a reMarkable tablet
 - fineliner
 - sharp pencil
 - highlighter
