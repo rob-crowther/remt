@@ -48,7 +48,7 @@ Features
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
         'Programming Language :: Python :: 3',
         'Development Status :: 3 - Alpha',
-        'Topic :: Multimedia :: Graphics :: Vector-Based',
+        'Topic :: Multimedia :: Graphics',
         'Topic :: Scientific/Engineering',
     ],
     keywords='remarkable tools',
