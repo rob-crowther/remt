@@ -47,9 +47,10 @@ def test_ls_line_long():
         'pinned': True,
         'bookmarked': True,
         'type': 'CollectionType',
+        'lastModified': '1526115458925',
     }
     result = r_cmd.ls_line_long('a/b', meta)
-    assert 'db a/b' == result
+    assert 'db 2018-05-12 09:57:38 a/b' == result
 
 def test_ls_filter_path():
     """
