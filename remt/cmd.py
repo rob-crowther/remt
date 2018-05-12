@@ -125,8 +125,44 @@ def ls_line_long(fn, data):
     line = '{}{} {}'.format(is_dir, bookmarked, fn)
     return line
 
+def ls_filter_path(meta, path):
+    """
+    Filter metadata to keep metadata starting with path name.
+
+    The path name itself *is* filtered out.
+
+    :param meta: reMarkable tablet metadata.
+    :param path: Path name.
+    """
+    meta = {k: v for k, v in meta.items() if k.startswith(path) and path != k}
+    return meta
+
+def ls_filter_parent_uuid(meta, uuid):
+    """
+    Filter metadata to keep metadata starting, which parent is identified
+    by UUID.
+
+    :param meta: reMarkable tablet metadata.
+    :param uuid: UUID of parent directory.
+    """
+    check = lambda v: not v if uuid is None else v == uuid
+    meta = {k: v for k, v in meta.items() if check(v.get('parent'))}
+    return meta
+
 async def cmd_ls(options):
     meta = await read_meta()
+
+    # get starting UUID while we have all metadata
+    start = None
+    if options.path:
+        start = meta[options.path]['uuid']
+
+    if options.path:
+        meta = ls_filter_path(meta, options.path)
+
+    if not options.recursive:
+        meta = ls_filter_parent_uuid(meta, start)
+
     to_line = ls_line_long if options.long else ls_line
     lines = (to_line(k, v) for k, v in sorted(meta.items()))
     print('\n'.join(lines))

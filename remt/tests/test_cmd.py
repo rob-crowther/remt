@@ -51,4 +51,50 @@ def test_ls_line_long():
     result = r_cmd.ls_line_long('a/b', meta)
     assert 'db a/b' == result
 
+def test_ls_filter_path():
+    """
+    Test `ls` command metadata filtering with parent path.
+    """
+    meta = {'a': 1, 'a/b': 2, 'a/c': 3, 'b': 4, 'c': 5}
+    result = r_cmd.ls_filter_path(meta, 'a')
+    assert {'a/b': 2, 'a/c': 3} == result
+
+def test_ls_filter_parent_uuid():
+    """
+    Test `ls` command metadata filtering for items with parent identified
+    by UUID.
+    """
+    meta = {
+        'a': {'uuid': 1},
+        'a/b': {'uuid': 2, 'parent': 1},
+        'a/c': {'uuid': 3, 'parent': 1},
+        'd': {'uuid': 4},
+    }
+    result = r_cmd.ls_filter_parent_uuid(meta, 1)
+    expected = {
+        'a/b': {'uuid': 2, 'parent': 1},
+        'a/c': {'uuid': 3, 'parent': 1},
+    }
+    assert expected == result
+
+def test_ls_filter_parent_uuid_null():
+    """
+    Test `ls` command metadata filtering for items with parent identified
+    by UUID when UUID is null.
+    """
+    meta = {
+        'a': {'uuid': 1},
+        'a/b': {'uuid': 2, 'parent': 1},
+        'a/c': {'uuid': 3, 'parent': 1},
+        'd': {'uuid': 4},
+    }
+    result = r_cmd.ls_filter_parent_uuid(meta, None)
+
+    # only items with no parents expected
+    expected = {
+        'a': {'uuid': 1},
+        'd': {'uuid': 4},
+    }
+    assert expected == result
+
 # vim: sw=4:et:ai

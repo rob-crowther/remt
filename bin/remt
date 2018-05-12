@@ -42,6 +42,14 @@ sub_parser.add_argument(
     default=False,
     help='Use long listing format',
 )
+sub_parser.add_argument(
+    '-R',
+    dest='recursive',
+    action='store_true',
+    default=False,
+    help='List subdirectories recursively',
+)
+sub_parser.add_argument('path', nargs='?', help='Starting path')
 
 # command: get
 sub_parser = main_parser.add_parser('get')
