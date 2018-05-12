@@ -42,7 +42,9 @@ reMarkable tablet tools
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
         'Programming Language :: Python :: 3',
-        'Development Status :: 4 - Beta',
+        'Development Status :: 3 - Alpha',
+        'Topic :: Multimedia :: Graphics :: Vector-Based',
+        'Topic :: Scientific/Engineering',
     ],
     keywords='remarkable tools',
     license='GPL',
