@@ -133,7 +133,6 @@ STYLE = {
 
 path_brush = partial(os.path.join, 'brush')
 
-
 @lru_cache(maxsize=4)
 def load_brush(fn):
     data = pkgutil.get_data('remt', path_brush(fn))
