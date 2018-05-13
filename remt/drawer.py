@@ -37,9 +37,7 @@ from gi.repository import Poppler
 
 from .data import *
 
-
 logger = logging.getLogger(__name__)
-
 
 WIDTH = 1404
 HEIGHT = 1872
@@ -82,7 +80,7 @@ STYLE = {
 #    cairo.LINE_JOIN_ROUND,
 #    cairo.LINE_CAP_ROUND,
 #),
-    # Pen
+    # Ballpoint
 #   2: lambda st: Style(
 #       32 * st.width ** 2 - 116 * st.width + 107,
 #       COLOR_STROKE[st.color],
@@ -180,7 +178,6 @@ def _(layer, context):
 
 @draw.register(Stroke)
 def _(stroke, context):
-    color = COLOR_STROKE[stroke.color]
     f = STYLE.get(stroke.pen)
     if f is not None:
         style = f(stroke)
