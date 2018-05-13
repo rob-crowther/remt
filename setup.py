@@ -39,10 +39,12 @@ Features
 
 - list files on a reMarkable tablet
 - export a notebook or an annotated PDF document from a reMarkable tablet
-- fineliner
-- sharp pencil with pencil brush
-- highlighter
-- eraser
+- support for
+
+  - fineliner
+  - sharp pencil with pencil brush
+  - highlighter
+  - eraser
 """,
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
