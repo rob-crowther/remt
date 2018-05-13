@@ -46,6 +46,10 @@ sub_parser.add_argument(
 )
 sub_parser.add_argument('path', nargs='?', help='Starting path')
 
+# command: mkdir
+sub_parser = main_parser.add_parser('mkdir')
+sub_parser.add_argument('path', help='Directory to create')
+
 # command: export
 sub_parser = main_parser.add_parser('export')
 sub_parser.add_argument('input', help='Path of file to download')

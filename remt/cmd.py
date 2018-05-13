@@ -28,8 +28,10 @@ import json
 import os
 import os.path
 from datetime import datetime
+from itertools import dropwhile
 from tempfile import TemporaryDirectory
 from cytoolz.dicttoolz import assoc
+from uuid import uuid4 as uuid
 
 import remt
 
@@ -43,6 +45,20 @@ FILE_TYPE = {
 #
 # utilities
 #
+
+def ssh():
+    """
+    Create SSH connection to a reMarkable tablet device.
+    """
+    conf_file = os.path.join(os.environ['HOME'], '.config', 'remt.ini')
+    cp = configparser.ConfigParser()
+    cp.read(conf_file)
+
+    host = cp.get('connection', 'host')
+    user = cp.get('connection', 'user')
+    password = cp.get('connection', 'password')
+
+    return asyncssh.connect(host, username=user, password=password)
 
 def fn_path(data, base=BASE_DIR, ext='*'):
     """
@@ -60,18 +76,21 @@ async def fetch(source, target):
     :param source: Files to be fetched from a reMarkable tablet.
     :param target: Local directory name.
     """
-    conf_file = os.path.join(os.environ['HOME'], '.config', 'remt.ini')
-    cp = configparser.ConfigParser()
-    cp.read(conf_file)
-
-    host = cp.get('connection', 'host')
-    user = cp.get('connection', 'user')
-    password = cp.get('connection', 'password')
-
-    ctx = asyncssh.connect(host, username=user, password=password)
-    async with ctx as conn:
+    async with ssh() as conn:
         async with conn.start_sftp_client() as sftp:
             await sftp.mget(source, target, recurse=True)
+
+async def upload(source, target):
+    """
+    Put a file onto a reMarkable tablet into the target directory.
+
+    :param source: Local file to be put onto a reMarkable tablet (can
+        contain wildcards).
+    :param target: Remote directory name.
+    """
+    async with ssh() as conn:
+        async with conn.start_sftp_client() as sftp:
+            await sftp.mput(source, target)
 
 #
 # metadata
@@ -84,7 +103,7 @@ def to_path(data, meta):
         return to_path(meta[parent], meta) + '/' + name
     else:
         return name
-        
+
 def resolve_uuid(meta):
     meta = {k: assoc(v, 'uuid', k) for k, v in meta.items()}
     return {to_path(data, meta): data for data in meta.values()}
@@ -173,6 +192,59 @@ async def cmd_ls(options):
     print('\n'.join(lines))
 
 #
+# cmd: mkdir
+#
+
+def create_dir_data(parent_uuid, name):
+    now = datetime.utcnow()
+    tstamp = int(now.timestamp() * 1000)
+    data = {
+        'deleted': False,
+        'lastModified': str(tstamp),
+        'metadatamodified': True,
+        'modified': True,
+        'parent': parent_uuid,
+        'pinned': False,
+        'synced': False,
+        'type': 'CollectionType',
+        'version': 0,
+        'visibleName': name,
+    }
+    return data
+
+async def cmd_mkdir(args):
+    """
+    Create a directory on reMarkable tablet device.
+    """
+    meta = await read_meta()
+    path = os.path.normpath(args.path)
+
+    if path in meta:
+        msg = 'Cannot create directory "{}" as it exists'.format(path)
+        raise ValueError(msg)
+
+    parent, name = os.path.split(path)
+    if parent and parent not in meta:
+        raise ValueError('Parent directory not found')
+
+    assert bool(name)
+
+    parent_uuid = meta[parent]['uuid']
+    data = create_dir_data(parent_uuid, name)
+
+    with TemporaryDirectory() as tmp_dir:
+        dir_fn = os.path.join(tmp_dir, str(uuid()))
+
+        with open(dir_fn + '.metadata', 'w') as f:
+            json.dump(data, f)
+
+        # empty content file required to create a directory
+        with open(dir_fn + '.content', 'w') as f:
+            json.dump({}, f)
+
+        await upload(dir_fn + '.*', BASE_DIR)
+
+#
 # cmd: export
 #
 
@@ -196,7 +268,8 @@ async def cmd_export(args):
 
 COMMANDS = {
     'ls': cmd_ls,
+    'mkdir': cmd_mkdir,
     'export': cmd_export,
 }
-         
+
 # vim: sw=4:et:ai

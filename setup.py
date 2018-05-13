@@ -38,6 +38,7 @@ reMarkable tablet tools.
 Features
 
 - list files on a reMarkable tablet
+- creating directories on a reMarkable tablet
 - export a notebook or an annotated PDF document from a reMarkable tablet
 - support for
 
@@ -45,6 +46,8 @@ Features
   - sharp pencil with pencil brush
   - highlighter
   - eraser
+
+See project's homepage for installation instructions.
 """,
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
