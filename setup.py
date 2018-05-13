@@ -42,6 +42,7 @@ Features
 - export a notebook or an annotated PDF document from a reMarkable tablet
 - support for
 
+  - ballpoint
   - fineliner
   - sharp pencil with pencil brush
   - highlighter

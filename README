@@ -9,6 +9,7 @@ Features
 - export a notebook or an annotated PDF document from a reMarkable tablet
 - support for
 
+  - ballpoint
   - fineliner
   - sharp pencil with pencil brush
   - highlighter
@@ -16,11 +17,11 @@ Features
 
 What does not work yet
 
-- ballpoint
 - marker
-- make pencil brush more like the one on reMarkable tablet
 - tilt pencil
 - brush
+- make pencil brush more like the one on reMarkable tablet
+- make ballpoint brush more like the one on reMarkable tablet
 
 Installation
 ============

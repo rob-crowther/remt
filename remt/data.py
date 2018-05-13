@@ -28,7 +28,10 @@ Stroke = namedtuple(
 )
 Segment = namedtuple('Segment', ['number', 'x', 'y', 'pressure', 'tilt'])
 
-Style = namedtuple('Style', ['width', 'color', 'join', 'cap', 'brush'])
+Style = namedtuple(
+    'Style',
+    ['width', 'color', 'join', 'cap', 'brush', 'draw_line']
+)
 Color = namedtuple('Color', ['red', 'green', 'blue', 'alpha'])
 Context = namedtuple('Context', ['cr_surface', 'cr_ctx', 'pdf_doc'])
 

@@ -36,6 +36,7 @@ from functools import singledispatch, lru_cache, partial
 from gi.repository import Poppler
 
 from .data import *
+from .line import draw_line_single, draw_line_multi
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,7 @@ STYLE_DEFAULT = Style(
     cairo.LINE_JOIN_ROUND,
     cairo.LINE_CAP_ROUND,
     None,
+    draw_line_single,
 )
 
 STYLE_HIGHLIGHTER = Style(
@@ -63,11 +65,22 @@ STYLE_HIGHLIGHTER = Style(
     COLOR_HIGHLIGHTER,
     cairo.LINE_JOIN_ROUND,
     cairo.LINE_CAP_SQUARE,
-    None
+    None,
+    draw_line_single,
+)
+
+STYLE_ERASER = Style(
+    None,
+    COLOR_STROKE[2],
+    cairo.LINE_JOIN_ROUND,
+    cairo.LINE_CAP_ROUND,
+    None,
+    draw_line_single,
 )
 
 
 STYLE = {
+# brush, pencil tilt and marker - tilt dependent
 #0: lambda st: Style(
 #    (5 * st.tilt) * (6 * st.width - 10) * (1 + 2 * st.pressure ** 3),
 #    COLOR_STROKE[st.color],
@@ -81,52 +94,40 @@ STYLE = {
 #    cairo.LINE_CAP_ROUND,
 #),
     # Ballpoint
-#   2: lambda st: Style(
-#       32 * st.width ** 2 - 116 * st.width + 107,
+    2: lambda st: STYLE_DEFAULT._replace(
+        width=32 * st.width ** 2 - 116 * st.width + 107,
+        color=COLOR_STROKE[st.color],
+        draw_line=draw_line_multi,
+    ),
+    # Fineliner
+    4: lambda st: STYLE_DEFAULT._replace(
+            width=32 * st.width ** 2 - 116 * st.width + 107,
+            color=COLOR_STROKE[st.color],
+    ),
+    # Marker (tilt dependent)
+#   3: lambda st: Style(
+#       64 * st.width - 112,
 #       COLOR_STROKE[st.color],
 #       cairo.LINE_JOIN_ROUND,
 #       cairo.LINE_CAP_ROUND,
-#   ),
-    # Fineliner
-    4: lambda st: Style(
-        32 * st.width ** 2 - 116 * st.width + 107,
-        COLOR_STROKE[st.color],
-        cairo.LINE_JOIN_ROUND,
-        cairo.LINE_CAP_ROUND,
-        None,
-    ),
-#   # Marker
-#   3: lambda st: Style(
-#       64 * st.width - 112,
-#       COLOR_STROKE[st.color]._replace(alpha=0.9),
-#       cairo.LINE_JOIN_ROUND,
-#       cairo.LINE_CAP_ROUND,
+#       None,
 #   ),
     # Highlighter
     5: lambda st: STYLE_HIGHLIGHTER,
     # Eraser
-    6: lambda st: Style(
-        1280 * st.width ** 2 - 4800 * st.width + 4510,
-        COLOR_STROKE[2],
-        cairo.LINE_JOIN_ROUND,
-        cairo.LINE_CAP_ROUND,
-        None,
+    6: lambda st: STYLE_ERASER._replace(
+        width=1280 * st.width ** 2 - 4800 * st.width + 4510,
     ),
     # Pencil - Sharp
-    7: lambda st: Style(
-        16 * st.width - 27,
-        COLOR_STROKE[st.color],
-        cairo.LINE_JOIN_ROUND,
-        cairo.LINE_CAP_ROUND,
-        'pencil.png',
+    7: lambda st: STYLE_DEFAULT._replace(
+        width=16 * st.width - 27,
+        color=COLOR_STROKE[st.color],
+        brush='pencil.png',
     ),
     # Erase area
-    8: lambda st: Style(
-        st.width,
-        COLOR_STROKE[st.color]._replace(alpha=0),
-        cairo.LINE_JOIN_ROUND,
-        cairo.LINE_CAP_ROUND,
-        None,
+    8: lambda st: STYLE_DEFAULT._replace(
+        width=st.width,
+        color=COLOR_STROKE[st.color]._replace(alpha=0),
     ),
 }
 
@@ -188,21 +189,17 @@ def _(stroke, context):
     # call acts as `move_to`
     cr = context.cr_ctx
     cr.save()
-    cr.new_path()
 
-    cr.set_line_width(style.width)
     cr.set_source_rgba(*style.color)
     cr.set_line_join(style.join)
     cr.set_line_cap(style.cap)
-
-    for seg in stroke.segments:
-        cr.line_to(seg.x, seg.y)
 
     if style.brush:
         brush = load_brush(style.brush)
         cr.set_source(brush)
 
-    cr.stroke()
+    style.draw_line(cr, stroke, style)
+
     cr.restore()
 
 @contextmanager
