@@ -22,7 +22,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='remt',
-    version='0.0.3',
+    version='0.0.4',
     description='remt - reMarkable tablet tools',
     author='Artur Wroblewski',
     author_email='wrobell@riseup.net',
@@ -40,6 +40,8 @@ Features
 - list files on a reMarkable tablet
 - creating directories on a reMarkable tablet
 - export a notebook or an annotated PDF document from a reMarkable tablet
+- significantly smaller PDF files comparing to the ones exported by the
+  reMarkable tablet
 - support for
 
   - ballpoint

@@ -7,6 +7,8 @@ Features
 - list files on a reMarkable tablet
 - creating directories on a reMarkable tablet
 - export a notebook or an annotated PDF document from a reMarkable tablet
+- significantly smaller PDF files comparing to the ones exported by the
+  reMarkable tablet
 - support for
 
   - ballpoint
