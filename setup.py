@@ -51,6 +51,8 @@ Features
   - eraser
 
 See project's homepage for installation instructions.
+
+.. image:: https://gitlab.com/wrobell/remt/raw/master/examples/rm.png
 """,
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
