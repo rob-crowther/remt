@@ -4,12 +4,16 @@ Features
 ========
 `remt` project features are
 
-- list files on a reMarkable tablet
-- creating directories on a reMarkable tablet
-- export a notebook or an annotated PDF document from a reMarkable tablet
+- reMarkable tablet operations
+
+  - list files and directories
+  - create directories
+  - export a notebook as PDF file
+  - export an annotated PDF document
+
 - significantly smaller PDF files comparing to the ones exported by the
   reMarkable tablet
-- support for
+- export supports
 
   - ballpoint
   - fineliner
