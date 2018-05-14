@@ -31,7 +31,7 @@ from aiocontext import async_contextmanager
 from datetime import datetime
 from collections import namedtuple
 from tempfile import TemporaryDirectory
-from cytoolz.dicttoolz import assoc
+from cytoolz.dicttoolz import assoc, get_in
 from uuid import uuid4 as uuid
 
 import remt
@@ -226,7 +226,7 @@ async def cmd_mkdir(args):
 
         assert bool(name)
 
-        parent_uuid = meta[parent]['uuid']
+        parent_uuid = get_in([parent, 'uuid'], meta)
         data = create_dir_data(parent_uuid, name)
 
         dir_fn = os.path.join(ctx.dir_data, str(uuid()))
