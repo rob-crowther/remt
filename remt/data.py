@@ -26,7 +26,10 @@ Stroke = namedtuple(
     'Stroke',
     ['number', 'pen', 'color', 'width', 'segments']
 )
-Segment = namedtuple('Segment', ['number', 'x', 'y', 'pressure', 'tilt'])
+Segment = namedtuple(
+    'Segment',
+    ['number', 'x', 'y', 'pressure', 'tilt_x', 'tilt_y'],
+)
 
 Style = namedtuple(
     'Style',

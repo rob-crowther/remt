@@ -51,8 +51,8 @@ def parse_item(fmt, fin):
     return fmt.unpack(buff)
 
 def parse_segment(n_seg, data):
-    x, y, pressure, tilt, _ = parse_item(FMT_SEGMENT, data)
-    return Segment(n_seg, x, y, pressure, tilt)
+    x, y, pressure, tilt_x, tilt_y = parse_item(FMT_SEGMENT, data)
+    return Segment(n_seg, x, y, pressure, tilt_x, tilt_y)
 
 def parse_stroke(n_stroke, data):
     pen, color, _, width, n = parse_item(FMT_STROKE, data)
