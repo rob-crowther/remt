@@ -63,7 +63,10 @@ See project's homepage for installation instructions.
     ],
     keywords='remarkable tools',
     license='GPL',
-    install_requires=['pygobject', 'pycairo', 'asyncssh', 'cytoolz'],
+    install_requires=[
+        'pygobject', 'pycairo', 'asyncssh', 'cytoolz',
+        'asyncio-contextmanager',
+    ],
 )
 
 # vim: sw=4:et:ai

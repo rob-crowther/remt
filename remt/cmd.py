@@ -27,7 +27,9 @@ import glob
 import json
 import os
 import os.path
+from aiocontext import async_contextmanager
 from datetime import datetime
+from collections import namedtuple
 from tempfile import TemporaryDirectory
 from cytoolz.dicttoolz import assoc
 from uuid import uuid4 as uuid
@@ -41,14 +43,23 @@ FILE_TYPE = {
     'CollectionType': 'd',
 }
 
+# config: remt config
+# sftp: SFTP connection to a device
+# dir_meta: metadata files
+# meta: parsed metadata
+# dir_data: directory where to fetch files from a device or where to
+#   prepare files for upload
+RemtContext = namedtuple(
+    'RemtContext',
+    ['config', 'sftp', 'dir_meta', 'meta', 'dir_data'],
+)
+
 #
 # utilities
 #
 
-def ssh():
-    """
-    Create SSH connection to a reMarkable tablet device.
-    """
+@async_contextmanager
+async def remt_ctx():
     conf_file = os.path.join(os.environ['HOME'], '.config', 'remt.ini')
     cp = configparser.ConfigParser()
     cp.read(conf_file)
@@ -57,7 +68,16 @@ def ssh():
     user = cp.get('connection', 'user')
     password = cp.get('connection', 'password')
 
-    return asyncssh.connect(host, username=user, password=password)
+    async with asyncssh.connect(host, username=user, password=password) as conn:
+        async with conn.start_sftp_client() as sftp:
+            with TemporaryDirectory() as dir_base:
+                dir_meta = os.path.join(dir_base, 'metadata')
+                dir_data = os.path.join(dir_base, 'data')
+                os.mkdir(dir_meta)
+                os.mkdir(dir_data)
+
+                meta = await read_meta(sftp, dir_meta)
+                yield RemtContext(cp, sftp, dir_meta, meta, dir_data)
 
 def fn_path(data, base=BASE_DIR, ext='*'):
     """
@@ -67,29 +87,6 @@ def fn_path(data, base=BASE_DIR, ext='*'):
     :param data: Metadata object.
     """
     return '{}/{}.{}'.format(base, data['uuid'], ext)
-
-async def fetch(source, target):
-    """
-    Fetch files from a reMarkable tablet into a local directory.
-
-    :param source: Files to be fetched from a reMarkable tablet.
-    :param target: Local directory name.
-    """
-    async with ssh() as conn:
-        async with conn.start_sftp_client() as sftp:
-            await sftp.mget(source, target, recurse=True)
-
-async def upload(source, target):
-    """
-    Put a file onto a reMarkable tablet into the target directory.
-
-    :param source: Local file to be put onto a reMarkable tablet (can
-        contain wildcards).
-    :param target: Remote directory name.
-    """
-    async with ssh() as conn:
-        async with conn.start_sftp_client() as sftp:
-            await sftp.mput(source, target)
 
 #
 # metadata
@@ -107,20 +104,19 @@ def resolve_uuid(meta):
     meta = {k: assoc(v, 'uuid', k) for k, v in meta.items()}
     return {to_path(data, meta): data for data in meta.values()}
 
-async def read_meta():
+async def read_meta(sftp, dir_meta):
     """
     Read metadata from a reMarkable tablet.
     """
-    with TemporaryDirectory() as dest:
-        await fetch(BASE_DIR + '/*.metadata', dest)
+    await sftp.mget(BASE_DIR + '/*.metadata', dir_meta)
 
-        files = glob.glob(dest + '/*.metadata')
-        data = (json.load(open(fn)) for fn in files)
+    files = glob.glob(dir_meta + '/*.metadata')
+    data = (json.load(open(fn)) for fn in files)
 
-        uuids = (os.path.basename(v) for v in files)
-        uuids = (os.path.splitext(v)[0] for v in uuids)
-        meta = {fn: v for fn, v in zip(uuids, data)}
-        return resolve_uuid(meta)
+    uuids = (os.path.basename(v) for v in files)
+    uuids = (os.path.splitext(v)[0] for v in uuids)
+    meta = {fn: v for fn, v in zip(uuids, data)}
+    return resolve_uuid(meta)
 
 #
 # cmd: ls
@@ -173,22 +169,23 @@ def ls_filter_parent_uuid(meta, uuid):
     return meta
 
 async def cmd_ls(options):
-    meta = await read_meta()
+    async with remt_ctx() as ctx:
+        meta = ctx.meta
 
-    # get starting UUID while we have all metadata
-    start = None
-    if options.path:
-        start = meta[options.path]['uuid']
+        # get starting UUID while we have all metadata
+        start = None
+        if options.path:
+            start = meta[options.path]['uuid']
 
-    if options.path:
-        meta = ls_filter_path(meta, options.path)
+        if options.path:
+            meta = ls_filter_path(meta, options.path)
 
-    if not options.recursive:
-        meta = ls_filter_parent_uuid(meta, start)
+        if not options.recursive:
+            meta = ls_filter_parent_uuid(meta, start)
 
-    to_line = ls_line_long if options.long else ls_line
-    lines = (to_line(k, v) for k, v in sorted(meta.items()))
-    print('\n'.join(lines))
+        to_line = ls_line_long if options.long else ls_line
+        lines = (to_line(k, v) for k, v in sorted(meta.items()))
+        print('\n'.join(lines))
 
 #
 # cmd: mkdir
@@ -215,24 +212,24 @@ async def cmd_mkdir(args):
     """
     Create a directory on reMarkable tablet device.
     """
-    meta = await read_meta()
-    path = os.path.normpath(args.path)
+    async with remt_ctx() as ctx:
+        meta = ctx.meta
+        path = os.path.normpath(args.path)
 
-    if path in meta:
-        msg = 'Cannot create directory "{}" as it exists'.format(path)
-        raise ValueError(msg)
+        if path in meta:
+            msg = 'Cannot create directory "{}" as it exists'.format(path)
+            raise ValueError(msg)
 
-    parent, name = os.path.split(path)
-    if parent and parent not in meta:
-        raise ValueError('Parent directory not found')
+        parent, name = os.path.split(path)
+        if parent and parent not in meta:
+            raise ValueError('Parent directory not found')
 
-    assert bool(name)
+        assert bool(name)
 
-    parent_uuid = meta[parent]['uuid']
-    data = create_dir_data(parent_uuid, name)
+        parent_uuid = meta[parent]['uuid']
+        data = create_dir_data(parent_uuid, name)
 
-    with TemporaryDirectory() as tmp_dir:
-        dir_fn = os.path.join(tmp_dir, str(uuid()))
+        dir_fn = os.path.join(ctx.dir_data, str(uuid()))
 
         with open(dir_fn + '.metadata', 'w') as f:
             json.dump(data, f)
@@ -241,22 +238,21 @@ async def cmd_mkdir(args):
         with open(dir_fn + '.content', 'w') as f:
             json.dump({}, f)
 
-        await upload(dir_fn + '.*', BASE_DIR)
+        await ctx.sftp.mput(dir_fn + '.*', BASE_DIR)
 
 #
 # cmd: export
 #
 
 async def cmd_export(args):
-    meta = await read_meta()
-    with TemporaryDirectory() as dest:
-        data = meta[args.input]  # TODO: handle non-existing file nicely
+    async with remt_ctx() as ctx:
+        data = ctx.meta[args.input]  # TODO: handle non-existing file nicely
 
         to_copy = fn_path(data)
-        await fetch(to_copy, dest)
+        await ctx.sftp.mget(to_copy, ctx.dir_data, recurse=True)
 
-        fin = fn_path(data, base=dest, ext='lines')
-        fin_pdf = fn_path(data, base=dest, ext='pdf')
+        fin = fn_path(data, base=ctx.dir_data, ext='lines')
+        fin_pdf = fn_path(data, base=ctx.dir_data, ext='pdf')
         fin_pdf = fin_pdf if os.path.exists(fin_pdf) else None
         with open(fin, 'rb') as f, \
                 remt.draw_context(fin_pdf, args.output) as ctx:
