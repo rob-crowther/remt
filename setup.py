@@ -52,6 +52,12 @@ Features
 
 See project's homepage for installation instructions.
 
+This project is *not* an official project of the reMarkable company.
+
+The `remt` project is licensed under terms of GPL license, version 3, see
+COPYING file for details. As stated in the license, there is no warranty,
+so any usage is on your own risk.
+
 .. image:: https://gitlab.com/wrobell/remt/raw/master/examples/rm.png
 """,
     classifiers=[
