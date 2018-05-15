@@ -335,6 +335,9 @@ async def cmd_import(args):
 
     async with remt_ctx() as ctx:
         out_meta = fn_metadata(ctx.meta, parent)
+        if out_meta['type'] != 'CollectionType':
+            raise FileError('Destination path is not a directory')
+
         fn_base = os.path.join(ctx.dir_data, str(uuid()))
         data = create_metadata(False, out_meta['uuid'], name)
 
@@ -344,7 +347,13 @@ async def cmd_import(args):
 
         # empty content file required
         with open(fn_base + '.content', 'w') as f:
-            json.dump({}, f)
+            content = {
+                'fileType': 'pdf',
+                'lastOpenedPage': 0,
+                'lineHeight': -1,
+                'pageCount': -1,
+            }
+            json.dump(content, f)
 
         await ctx.sftp.mput(fn_base + '.*', BASE_DIR)
 
