@@ -25,7 +25,6 @@ import asyncssh
 import configparser
 import glob
 import json
-import os
 import os.path
 from aiocontext import async_contextmanager
 from datetime import datetime
@@ -35,6 +34,7 @@ from cytoolz.dicttoolz import assoc, get_in
 from uuid import uuid4 as uuid
 
 import remt
+from .error import *
 
 
 BASE_DIR = '/home/root/.local/share/remarkable/xochitl'
@@ -42,6 +42,18 @@ BASE_DIR = '/home/root/.local/share/remarkable/xochitl'
 FILE_TYPE = {
     'CollectionType': 'd',
 }
+
+ERROR_CFG = """\
+Configuration file {conf} not found
+
+  Create configuration file `{conf}` with contents
+
+    [connection]
+    host=10.11.99.1
+    user=root
+    password=<your reMarkable tablet password>
+"""
+
 
 # config: remt config
 # sftp: SFTP connection to a device
@@ -58,15 +70,27 @@ RemtContext = namedtuple(
 # utilities
 #
 
-@async_contextmanager
-async def remt_ctx():
-    conf_file = os.path.join(os.environ['HOME'], '.config', 'remt.ini')
+def read_config():
+    """
+    Read and return `remt` project configuration.
+    """
+    conf_file = os.path.expanduser('~/.config/remt.ini')
+    if not os.path.exists(conf_file):
+        msg = ERROR_CFG.format(conf=conf_file)
+        raise ConfigError(msg)
+
     cp = configparser.ConfigParser()
     cp.read(conf_file)
+    return cp
 
-    host = cp.get('connection', 'host')
-    user = cp.get('connection', 'user')
-    password = cp.get('connection', 'password')
+
+@async_contextmanager
+async def remt_ctx():
+    config = read_config()
+
+    host = config.get('connection', 'host')
+    user = config.get('connection', 'user')
+    password = config.get('connection', 'password')
 
     async with asyncssh.connect(host, username=user, password=password) as conn:
         async with conn.start_sftp_client() as sftp:
@@ -77,7 +101,7 @@ async def remt_ctx():
                 os.mkdir(dir_data)
 
                 meta = await read_meta(sftp, dir_meta)
-                yield RemtContext(cp, sftp, dir_meta, meta, dir_data)
+                yield RemtContext(config, sftp, dir_meta, meta, dir_data)
 
 def fn_path(data, base=BASE_DIR, ext='*'):
     """

@@ -22,6 +22,7 @@ import argparse
 import asyncio
 
 import remt.cmd
+from remt.error import RemtError
 
 desc = 'remt - reMarkable tablet tools'
 
@@ -63,6 +64,10 @@ if cmd is None:
     parser.exit()
 
 loop = asyncio.get_event_loop()
-loop.run_until_complete(cmd(args))
+try:
+    loop.run_until_complete(cmd(args))
+except RemtError as ex:
+    msg = 'remt: {}\n'.format(ex)
+    parser.exit(1, msg)
 
 # vim: sw=4:et:ai

@@ -21,7 +21,13 @@
 Command line commands unit tests.
 """
 
+import os.path
 from remt import cmd as r_cmd
+from remt.error import *
+
+import pytest
+from unittest import mock
+
 
 
 def test_fn_path():
@@ -97,5 +103,15 @@ def test_ls_filter_parent_uuid_null():
         'd': {'uuid': 4},
     }
     assert expected == result
+
+def test_read_config_error():
+    """
+    Test if error is raised when no `remt` configuration project is found.
+    """
+    with mock.patch.object(os.path, 'exists') as exists:
+        exists.return_value = False
+
+        with pytest.raises(ConfigError):
+            r_cmd.read_config()
 
 # vim: sw=4:et:ai
