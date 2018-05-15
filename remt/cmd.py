@@ -83,7 +83,6 @@ def read_config():
     cp.read(conf_file)
     return cp
 
-
 @async_contextmanager
 async def remt_ctx():
     config = read_config()
@@ -111,6 +110,29 @@ def fn_path(data, base=BASE_DIR, ext='*'):
     :param data: Metadata object.
     """
     return '{}/{}.{}'.format(base, data['uuid'], ext)
+
+def norm_path(path):
+    """
+    Normalise path of a file on a reMarkable tablet.
+
+    All leading and trailing slashes are removed. Multiple slashes are
+    replaced with one.
+
+    :param path: Path to normalise.
+    """
+    return os.path.normpath(path).strip('/')
+
+def fn_metadata(meta, path):
+    """
+    Get reMarkable tablet file metadata or raise file not found error if no
+    metadata for path is found.
+
+    :param meta: reMarkable tablet metadata.
+    :param path: Path of reMarkable tablet file.
+    """
+    data = meta.get(path)
+    if not data:
+        raise FileError('File or directory not found: {}'.format(path))
 
 #
 # metadata
@@ -192,22 +214,24 @@ def ls_filter_parent_uuid(meta, uuid):
     meta = {k: v for k, v in meta.items() if check(v.get('parent'))}
     return meta
 
-async def cmd_ls(options):
+async def cmd_ls(args):
+    to_line = ls_line_long if args.long else ls_line
+    path = norm_path(args.path) if args.path else None
+
     async with remt_ctx() as ctx:
         meta = ctx.meta
 
         # get starting UUID while we have all metadata
         start = None
-        if options.path:
-            start = meta[options.path]['uuid']
+        if path:
+            start = fn_metadata(meta, path)['uuid']
 
-        if options.path:
-            meta = ls_filter_path(meta, options.path)
+        if path:
+            meta = ls_filter_path(meta, path)
 
-        if not options.recursive:
+        if not args.recursive:
             meta = ls_filter_parent_uuid(meta, start)
 
-        to_line = ls_line_long if options.long else ls_line
         lines = (to_line(k, v) for k, v in sorted(meta.items()))
         print('\n'.join(lines))
 
@@ -238,15 +262,15 @@ async def cmd_mkdir(args):
     """
     async with remt_ctx() as ctx:
         meta = ctx.meta
-        path = os.path.normpath(args.path)
+        path = norm_path(args.path)
 
         if path in meta:
             msg = 'Cannot create directory "{}" as it exists'.format(path)
-            raise ValueError(msg)
+            raise FileError(msg)
 
         parent, name = os.path.split(path)
         if parent and parent not in meta:
-            raise ValueError('Parent directory not found')
+            raise FileError('Parent directory not found')
 
         assert bool(name)
 
@@ -270,7 +294,8 @@ async def cmd_mkdir(args):
 
 async def cmd_export(args):
     async with remt_ctx() as ctx:
-        data = ctx.meta[args.input]  # TODO: handle non-existing file nicely
+        path = norm_path(path)
+        data = fn_metadata(ctx.meta, args.input)
 
         to_copy = fn_path(data)
         await ctx.sftp.mget(to_copy, ctx.dir_data, recurse=True)

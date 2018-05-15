@@ -114,4 +114,27 @@ def test_read_config_error():
         with pytest.raises(ConfigError):
             r_cmd.read_config()
 
+def test_norm_path():
+    """
+    Test path normalisation.
+    """
+    result = r_cmd.norm_path('a//b/c//d///')
+    assert 'a/b/c/d' == result
+
+def test_norm_path_leading_slashes():
+    """
+    Test path normalisation with leading slashes.
+    """
+    result = r_cmd.norm_path('///a//b/c//d///')
+    assert 'a/b/c/d' == result
+
+def test_fn_metadata_error():
+    """
+    Test if error is raised if there is no metadata for a path.
+    """
+    meta = {'a/b/': 1}
+
+    with pytest.raises(FileError):
+        r_cmd.fn_metadata(meta, 'x/y')
+
 # vim: sw=4:et:ai
