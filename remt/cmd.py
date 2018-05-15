@@ -91,16 +91,24 @@ async def remt_ctx():
     user = config.get('connection', 'user')
     password = config.get('connection', 'password')
 
-    async with asyncssh.connect(host, username=user, password=password) as conn:
-        async with conn.start_sftp_client() as sftp:
-            with TemporaryDirectory() as dir_base:
-                dir_meta = os.path.join(dir_base, 'metadata')
-                dir_data = os.path.join(dir_base, 'data')
-                os.mkdir(dir_meta)
-                os.mkdir(dir_data)
+    try:
+        async with asyncssh.connect(host, username=user, password=password) as conn:
+            async with conn.start_sftp_client() as sftp:
+                with TemporaryDirectory() as dir_base:
+                    dir_meta = os.path.join(dir_base, 'metadata')
+                    dir_data = os.path.join(dir_base, 'data')
+                    os.mkdir(dir_meta)
+                    os.mkdir(dir_data)
 
-                meta = await read_meta(sftp, dir_meta)
-                yield RemtContext(config, sftp, dir_meta, meta, dir_data)
+                    meta = await read_meta(sftp, dir_meta)
+                    yield RemtContext(config, sftp, dir_meta, meta, dir_data)
+    except OSError as ex:
+        if ex.errno == 101:
+            raise ConnectionError(
+                'Cannot connect to a reMarkable tablet: {}'.format(ex.strerror)
+            )
+        else:
+            raise
 
 def fn_path(data, base=BASE_DIR, ext='*'):
     """

@@ -22,6 +22,11 @@ class RemtError(Exception):
     Basic class for `remt` project exceptions.
     """
 
+class ConnectionError(RemtError):
+    """
+    reMarkable tablet connection error.
+    """
+
 class ConfigError(RemtError):
     """
     `remt` project configuration exception.
