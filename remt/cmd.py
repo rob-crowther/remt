@@ -26,6 +26,7 @@ import configparser
 import glob
 import json
 import os.path
+import shutil
 from aiocontext import async_contextmanager
 from datetime import datetime
 from collections import namedtuple
@@ -141,6 +142,7 @@ def fn_metadata(meta, path):
     data = meta.get(path)
     if not data:
         raise FileError('File or directory not found: {}'.format(path))
+    return data
 
 #
 # metadata
@@ -157,6 +159,24 @@ def to_path(data, meta):
 def resolve_uuid(meta):
     meta = {k: assoc(v, 'uuid', k) for k, v in meta.items()}
     return {to_path(data, meta): data for data in meta.values()}
+
+def create_metadata(is_dir, parent_uuid, name):
+    now = datetime.utcnow()
+    tstamp = int(now.timestamp() * 1000)
+    type = 'CollectionType' if is_dir else 'DocumentType'
+    data = {
+        'deleted': False,
+        'lastModified': str(tstamp),
+        'metadatamodified': True,
+        'modified': True,
+        'parent': parent_uuid,
+        'pinned': False,
+        'synced': False,
+        'type': type,
+        'version': 0,
+        'visibleName': name,
+    }
+    return data
 
 async def read_meta(sftp, dir_meta):
     """
@@ -247,23 +267,6 @@ async def cmd_ls(args):
 # cmd: mkdir
 #
 
-def create_dir_data(parent_uuid, name):
-    now = datetime.utcnow()
-    tstamp = int(now.timestamp() * 1000)
-    data = {
-        'deleted': False,
-        'lastModified': str(tstamp),
-        'metadatamodified': True,
-        'modified': True,
-        'parent': parent_uuid,
-        'pinned': False,
-        'synced': False,
-        'type': 'CollectionType',
-        'version': 0,
-        'visibleName': name,
-    }
-    return data
-
 async def cmd_mkdir(args):
     """
     Create a directory on reMarkable tablet device.
@@ -283,7 +286,7 @@ async def cmd_mkdir(args):
         assert bool(name)
 
         parent_uuid = get_in([parent, 'uuid'], meta)
-        data = create_dir_data(parent_uuid, name)
+        data = create_metadata(True, parent_uuid, name)
 
         dir_fn = os.path.join(ctx.dir_data, str(uuid()))
 
@@ -301,9 +304,10 @@ async def cmd_mkdir(args):
 #
 
 async def cmd_export(args):
+    path = norm_path(args.input)
+
     async with remt_ctx() as ctx:
-        path = norm_path(path)
-        data = fn_metadata(ctx.meta, args.input)
+        data = fn_metadata(ctx.meta, path)
 
         to_copy = fn_path(data)
         await ctx.sftp.mget(to_copy, ctx.dir_data, recurse=True)
@@ -317,11 +321,38 @@ async def cmd_export(args):
             for item in remt.parse(f):
                 remt.draw(item, ctx)
 
+#
+# cmd: import
+#
+
+async def cmd_import(args):
+    """
+    Import a file onto a reMarkable tablet.
+    """
+    fn_in = args.input
+    name = os.path.basename(fn_in)
+    parent = norm_path(args.output)
+
+    async with remt_ctx() as ctx:
+        out_meta = fn_metadata(ctx.meta, parent)
+        fn_base = os.path.join(ctx.dir_data, str(uuid()))
+        data = create_metadata(False, out_meta['uuid'], name)
+
+        shutil.copy(fn_in, fn_base + '.pdf')
+        with open(fn_base + '.metadata', 'w') as f:
+            json.dump(data, f)
+
+        # empty content file required
+        with open(fn_base + '.content', 'w') as f:
+            json.dump({}, f)
+
+        await ctx.sftp.mput(fn_base + '.*', BASE_DIR)
 
 COMMANDS = {
     'ls': cmd_ls,
     'mkdir': cmd_mkdir,
     'export': cmd_export,
+    'import': cmd_import,
 }
 
 # vim: sw=4:et:ai

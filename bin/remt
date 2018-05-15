@@ -53,8 +53,13 @@ sub_parser.add_argument('path', help='Directory to create')
 
 # command: export
 sub_parser = main_parser.add_parser('export')
-sub_parser.add_argument('input', help='Path of file to download')
+sub_parser.add_argument('input', help='Path of file to export')
 sub_parser.add_argument('output', help='Output filename')
+
+# command: import
+sub_parser = main_parser.add_parser('import')
+sub_parser.add_argument('input', help='Path of file to import')
+sub_parser.add_argument('output', help='Target directory')
 
 args = parser.parse_args()
 

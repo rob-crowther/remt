@@ -43,6 +43,7 @@ Features
   - create directories
   - export a notebook as PDF file
   - export an annotated PDF document
+  - import a PDF document
 
 - significantly smaller PDF files comparing to the ones exported by the
   reMarkable tablet
