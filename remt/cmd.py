@@ -36,6 +36,7 @@ from uuid import uuid4 as uuid
 
 import remt
 from .error import *
+from .pdf import pdf_open
 
 
 BASE_DIR = '/home/root/.local/share/remarkable/xochitl'
@@ -186,6 +187,7 @@ async def read_meta(sftp, dir_meta):
 
     files = glob.glob(dir_meta + '/*.metadata')
     data = (json.load(open(fn)) for fn in files)
+    data = (v for v in data if not v.get('deleted'))
 
     uuids = (os.path.basename(v) for v in files)
     uuids = (os.path.splitext(v)[0] for v in uuids)
@@ -341,17 +343,20 @@ async def cmd_import(args):
         fn_base = os.path.join(ctx.dir_data, str(uuid()))
         data = create_metadata(False, out_meta['uuid'], name)
 
-        shutil.copy(fn_in, fn_base + '.pdf')
+        fn_pdf = fn_base + '.pdf'
+        shutil.copy(fn_in, fn_pdf)
         with open(fn_base + '.metadata', 'w') as f:
             json.dump(data, f)
 
         # empty content file required
         with open(fn_base + '.content', 'w') as f:
+            page_count = pdf_open(fn_pdf).get_n_pages()
             content = {
                 'fileType': 'pdf',
                 'lastOpenedPage': 0,
                 'lineHeight': -1,
-                'pageCount': -1,
+                'pageCount': page_count,
+
             }
             json.dump(content, f)
 

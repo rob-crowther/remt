@@ -21,22 +21,18 @@
 reMarkable strokes drawing using Cairo library.
 """
 
-import gi
-gi.require_version('Poppler', '0.18')
-
 import cairo
 import io
 import logging
 import os.path
-import pathlib
 import pkgutil
 from collections import namedtuple
 from contextlib import contextmanager
 from functools import singledispatch, lru_cache, partial
-from gi.repository import Poppler
 
 from .data import *
 from .line import draw_line_single, draw_line_multi
+from .pdf import pdf_open
 
 logger = logging.getLogger(__name__)
 
@@ -204,13 +200,7 @@ def _(stroke, context):
 
 @contextmanager
 def draw_context(fn_pdf, fn_out):
-    factor = 1
-
-    pdf_doc = None
-    if fn_pdf:
-        pdf_path = pathlib.Path(fn_pdf).resolve().as_uri()
-        pdf_doc = Poppler.Document.new_from_file(pdf_path)
-
+    pdf_doc = pdf_open(fn_pdf) if fn_pdf else None
     surface = cairo.PDFSurface(fn_out, WIDTH, HEIGHT)
     try:
         cr_ctx = cairo.Context(surface)
