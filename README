@@ -24,6 +24,8 @@ Features
       - highlighter
       - eraser
 
+- `remt` project can be used as a library for UI applications
+
 What does not work yet
 
 - marker

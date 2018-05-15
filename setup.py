@@ -57,6 +57,8 @@ Features
       - highlighter
       - eraser
 
+- `remt` project can be used as a library for UI applications
+
 See project's homepage for installation instructions.
 
 This project is *not* an official project of the reMarkable company.
