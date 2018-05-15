@@ -22,7 +22,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='remt',
-    version='0.0.5',
+    version='0.1.0',
     description='remt - reMarkable tablet tools',
     author='Artur Wroblewski',
     author_email='wrobell@riseup.net',
