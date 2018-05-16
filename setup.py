@@ -70,7 +70,7 @@ COPYING file for details. As stated in the license, there is no warranty,
 so any usage is on your own risk.
 
 .. image:: https://gitlab.com/wrobell/remt/raw/master/examples/rm.png
-    :align: center
+   :align: center
 """,
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
