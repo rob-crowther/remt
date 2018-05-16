@@ -31,7 +31,7 @@ from contextlib import contextmanager
 from functools import singledispatch, lru_cache, partial
 
 from .data import *
-from .line import draw_line_single, draw_line_multi
+from .tool import draw_line_single, draw_line_multi
 from .pdf import pdf_open
 
 logger = logging.getLogger(__name__)
@@ -83,11 +83,13 @@ STYLE = {
 #    cairo.LINE_JOIN_ROUND,
 #    cairo.LINE_CAP_ROUND,
 #),
-#1: lambda st: Style(
-#    (10 * st.tilt - 2) * (8 * st.width - 14),
-#    COLOR_STROKE[st.color]._replace(alpha=(st.pressure - 0.2) ** 2),
-#    cairo.LINE_JOIN_ROUND,
-#    cairo.LINE_CAP_ROUND,
+    # Tilt pencil
+#1: lambda st: STYLE_DEFAULT._replace(
+#    width=(8 * st.width - 14),
+#    color=COLOR_STROKE[st.color],
+#    cap=cairo.LINE_CAP_BUTT,
+#    brush='pencil.png',
+#    draw_line=draw_line_multi,
 #),
     # Ballpoint
     2: lambda st: STYLE_DEFAULT._replace(
@@ -101,20 +103,19 @@ STYLE = {
             color=COLOR_STROKE[st.color],
     ),
     # Marker (tilt dependent)
-#   3: lambda st: Style(
-#       64 * st.width - 112,
-#       COLOR_STROKE[st.color],
-#       cairo.LINE_JOIN_ROUND,
-#       cairo.LINE_CAP_ROUND,
-#       None,
-#   ),
+#3: lambda st: STYLE_DEFAULT._replace(
+#    width=64 * st.width - 112,
+#    color=COLOR_STROKE[st.color],
+#    brush=None,
+#    draw_line=draw_line_multi,
+#),
     # Highlighter
     5: lambda st: STYLE_HIGHLIGHTER,
     # Eraser
     6: lambda st: STYLE_ERASER._replace(
         width=1280 * st.width ** 2 - 4800 * st.width + 4510,
     ),
-    # Pencil - Sharp
+    # Sharp pencil
     7: lambda st: STYLE_DEFAULT._replace(
         width=16 * st.width - 27,
         color=COLOR_STROKE[st.color],

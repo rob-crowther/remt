@@ -19,6 +19,13 @@
 
 """
 Various line drawing strategies.
+
+1. Marker is tilt dependent.
+
+2. Tilt pencil
+
+- pressure changes between two brush versions - lighter or darker
+- tilt dependent
 """
 
 def draw_line_multi(cr, stroke, style):
