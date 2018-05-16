@@ -52,11 +52,11 @@ Features
   - multi-page notebooks and PDF files
   - the following drawing tools
 
-      - ballpoint (no brush supported yet)
-      - fineliner
-      - sharp pencil with pencil brush
-      - highlighter
-      - eraser
+    - ballpoint (no brush supported yet)
+    - fineliner
+    - sharp pencil with pencil brush
+    - highlighter
+    - eraser
 
 - `remt` project can be used as a library for UI applications
 
