@@ -18,14 +18,31 @@
 #
 
 """
-Various line drawing strategies.
+Drawing tool calculations.
 
-1. Marker is tilt dependent.
+Drawing tools characteristics is as follows
 
-2. Tilt pencil
+1. Marker
 
-- pressure changes between two brush versions - lighter or darker
-- tilt dependent
+- uses pressure
+- uses tilt
+- uses a brush
+
+2. Sharp pencil
+
+- does not use pressure
+- does not use tilt
+- uses a brush
+
+3. Tilt pencil
+
+- uses pressure to distinguish between two brush versions - lighter or
+  darker
+- uses tilt
+
+Use color alpha only for highlighter and eraser area. All other tools
+should use appropriate brushes at full opacity. For example, drawing with
+pencil in exactly the same place does not make it darker.
 """
 
 def draw_line_multi(cr, stroke, style):
