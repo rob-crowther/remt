@@ -54,7 +54,7 @@ Usage
 Use `remt` command to execute commands on a reMarkable tablet device. The
 summary of the commands can be obtained with `--help` option, i.e.::
 
-    $ ./bin/remt --help
+    $ remt --help
     usage: remt [-h] {ls,mkdir,export,import} ...
 
     remt - reMarkable tablet command-line tools
