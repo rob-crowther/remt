@@ -33,7 +33,7 @@ Segment = namedtuple(
 
 Style = namedtuple(
     'Style',
-    ['width', 'color', 'join', 'cap', 'brush', 'line_type']
+    ['color', 'join', 'cap', 'brush', 'tool_line']
 )
 Color = namedtuple('Color', ['red', 'green', 'blue', 'alpha'])
 Context = namedtuple('Context', ['cr_surface', 'cr_ctx', 'pdf_doc'])

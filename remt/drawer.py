@@ -48,8 +48,7 @@ COLOR_STROKE = {
 COLOR_HIGHLIGHTER = Color(1.0, 0.8039, 0.0, 0.1)
 
 STYLE_DEFAULT = Style(
-    1,
-    COLOR_STROKE[0],
+    None,
     cairo.LINE_JOIN_ROUND,
     cairo.LINE_CAP_ROUND,
     None,
@@ -57,23 +56,22 @@ STYLE_DEFAULT = Style(
 )
 
 STYLE_HIGHLIGHTER = Style(
-    30,
     COLOR_HIGHLIGHTER,
     cairo.LINE_JOIN_ROUND,
     cairo.LINE_CAP_SQUARE,
     None,
-    tool.single_line,
+    tool.line_highlighter,
 )
 
 STYLE_ERASER = Style(
-    None,
     COLOR_STROKE[2],
     cairo.LINE_JOIN_ROUND,
     cairo.LINE_CAP_ROUND,
     None,
-    tool.single_line,
+    tool.line_eraser,
 )
 
+style_default = STYLE_DEFAULT._replace
 
 STYLE = {
 # brush, pencil tilt and marker - tilt dependent
@@ -89,43 +87,33 @@ STYLE = {
 #    color=COLOR_STROKE[st.color],
 #    cap=cairo.LINE_CAP_BUTT,
 #    brush='pencil.png',
-#    line_type=tool.multi_line,
+#    tool_line=tool.multi_line,
 #),
-    # Ballpoint
-    2: lambda st: STYLE_DEFAULT._replace(
-        width=32 * st.width ** 2 - 116 * st.width + 107,
-        color=COLOR_STROKE[st.color],
-        line_type=tool.multi_line_ballpoint,
-    ),
-    # Fineliner
-    4: lambda st: STYLE_DEFAULT._replace(
-            width=32 * st.width ** 2 - 116 * st.width + 107,
-            color=COLOR_STROKE[st.color],
-    ),
     # Marker (tilt dependent)
 #3: lambda st: STYLE_DEFAULT._replace(
 #    width=64 * st.width - 112,
 #    color=COLOR_STROKE[st.color],
 #    brush=None,
-#    line_type=tool.multi_line,
+#    tool_line=tool.multi_line,
 #),
+
+    # Ballpoint
+    2: style_default(tool_line=tool.line_ballpoint),
+
+    # Fineliner
+    4: style_default(tool_line=tool.line_fineliner),
+
     # Highlighter
-    5: lambda st: STYLE_HIGHLIGHTER,
+    5: STYLE_HIGHLIGHTER,
+
     # Eraser
-    6: lambda st: STYLE_ERASER._replace(
-        width=1280 * st.width ** 2 - 4800 * st.width + 4510,
-    ),
+    6: STYLE_ERASER,
+
     # Sharp pencil
-    7: lambda st: STYLE_DEFAULT._replace(
-        width=16 * st.width - 27,
-        color=COLOR_STROKE[st.color],
-        brush='pencil.png',
-    ),
+    7: style_default(tool_line=tool.line_sharp_pencil, brush='pencil.png'),
+
     # Erase area
-    8: lambda st: STYLE_DEFAULT._replace(
-        width=st.width,
-        color=COLOR_STROKE[st.color]._replace(alpha=0),
-    ),
+    8: STYLE_ERASER,
 }
 
 
@@ -175,17 +163,20 @@ def _(layer, context):
 
 @draw.register(Stroke)
 def _(stroke, context):
-    f = STYLE.get(stroke.pen)
-    if f is not None:
-        style = f(stroke)
-    else:
+    style = STYLE.get(stroke.pen)
+    if not style:
         logger.debug('Not supported pen for stroke: {}'.format(stroke))
         return
+
+    # if no predefined style color, then use stroke color
+    assert stroke.color in (0, 1, 2)
+    color = style.color
+    color = COLOR_STROKE[stroke.color] if color is None else color
 
     cr = context.cr_ctx
     cr.save()
 
-    cr.set_source_rgba(*style.color)
+    cr.set_source_rgba(*color)
     cr.set_line_join(style.join)
     cr.set_line_cap(style.cap)
 
@@ -193,7 +184,7 @@ def _(stroke, context):
         brush = load_brush(style.brush)
         cr.set_source(brush)
 
-    lines = style.line_type(stroke, style)
+    lines = style.tool_line(stroke)
     draw_multi_line(cr, lines)
 
     cr.restore()
@@ -210,12 +201,12 @@ def draw_multi_line(cr, lines):
     :param cr: Cairo context.
     :param lines: Collection of lines to draw.
     """
-    for width, line in lines:
+    for width, points in lines:
         # on new path, the position of point is undefined and first
         # `line_to` call acts as `move_to`
         cr.new_path()
         cr.set_line_width(width)
-        for x, y in line:
+        for x, y in points:
             cr.line_to(x, y)
         cr.stroke()
 

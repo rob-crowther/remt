@@ -59,6 +59,19 @@ Drawing tools characteristics is as follows
 - uses tilt
 - does not use brush
 
+7. Highlighter
+
+- static width of 30px
+- does not use pressure
+- does not use tilt
+- does not use brush
+
+8. Eraser
+
+- does not use pressure
+- does not use tilt
+- does not use brush
+
 Use color alpha only for highlighter and eraser area. All other tools
 should use appropriate brushes at full opacity. For example, drawing with
 pencil in exactly the same place does not make it darker.
@@ -69,62 +82,70 @@ from operator import attrgetter
 
 point = attrgetter('x', 'y')
 
-def draw_line_multi(cr, stroke, style):
-    """
-    Draw a line varying width with multiple paths.
-
-    :param cr: Cairo context.
-    :param stroke: Stroke data.
-    :param style: Style data.
-    """
-    segments = stroke.segments
-    for s1, s2 in zip(segments[:-1], segments[1:]):
-        cr.new_path()
-
-        width = style.width
-        width += s1.pressure ** 2048
-
-        cr.set_line_width(width)
-        cr.move_to(s1.x, s1.y)
-        cr.line_to(s2.x, s2.y)
-        cr.stroke()
-
-def single_line(stroke, style):
+def single_line(calc, stroke):
     """
     Return collection containing single line.
 
+    :param calc: Width calculator.
     :param stroke: Stroke data.
-    :param style: Style data.
     """
-    yield (style.width, (point(seg) for seg in stroke.segments))
+    yield (calc(stroke), (point(seg) for seg in stroke.segments))
 
-def multi_line(calc, stroke, style):
+def multi_line(calc, stroke):
     """
     Return collection of lines of varying width. 
 
     :param calc: Width calculator.
     :param stroke: Stroke to convert to lines.
-    :param style: Stroke style information.
     """
     segments = stroke.segments
 
     # only pressure changes, so optimize by drawing lines with the same
     # pressure as single path
     lines = (
-        (calc(style, s1), (point(s1), point(s2)))
+        (calc(stroke, s1), (point(s1), point(s2)))
         for s1, s2 in zip(segments[:-1], segments[1:])
     )
     yield from lines
 
-def calc_width_ballpoint(style, segment):
+def calc_width_fineliner(stroke):
+    """
+    Calculate fineliner width.
+
+    :param stroke: Stroke data.
+    """
+    return 32 * stroke.width ** 2 - 116 * stroke.width + 107
+
+def calc_width_sharp_pencil(stroke):
+    """
+    Calculate sharp pencil width.
+
+    :param stroke: Stroke data.
+    """
+    return 16 * stroke.width - 27
+
+def calc_width_eraser(stroke):
+    """
+    Calculate eraser width.
+
+    :param stroke: Stroke data.
+    """
+    return 1280 * stroke.width ** 2 - 4800 * stroke.width + 4510
+
+def calc_width_ballpoint(stroke, segment):
     """
     Calculate ballpoint width.
 
-    :param style: Stroke style information.
+    :param stroke: Stroke data.
     :param segment: Segment data.
     """
-    return style.width + segment.pressure ** 2048
+    width = calc_width_fineliner(stroke)
+    return width + segment.pressure ** 2048
 
-multi_line_ballpoint = partial(multi_line, calc_width_ballpoint)
+line_ballpoint = partial(multi_line, calc_width_ballpoint)
+line_fineliner = partial(single_line, calc_width_fineliner)
+line_sharp_pencil = partial(single_line, calc_width_sharp_pencil)
+line_highlighter = partial(single_line, lambda *args: 30)
+line_eraser = partial(single_line, calc_width_eraser)
 
 # vim: sw=4:et:ai
