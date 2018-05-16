@@ -51,6 +51,24 @@ Install `remt` project with `pip`, i.e.:
 
 Usage
 =====
+Use `remt` command to execute commands on a reMarkable tablet device. The
+summary of the commands can be obtained with `--help` option, i.e.::
+
+    $ ./bin/remt --help
+    usage: remt [-h] {ls,mkdir,export,import} ...
+
+    remt - reMarkable tablet command-line tools
+
+    optional arguments:
+      -h, --help            show this help message and exit
+
+    subcommands:
+      {ls,mkdir,export,import}
+        ls                  list files on the tablet
+        mkdir               create a directory on the tablet
+        export              export a notebook or an annotated PDF file from the
+                            tablet
+        import              import a PDF file onto the tablet
 
 Acknowledgements
 ================
