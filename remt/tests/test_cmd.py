@@ -1,5 +1,5 @@
 #
-# remt - reMarkable tablet tools
+# remt - reMarkable tablet command-line tools
 #
 # Copyright (C) 2018 by Artur Wroblewski <wrobell@riseup.net>
 #

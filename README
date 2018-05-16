@@ -1,4 +1,4 @@
-`remt` - reMarkable tablet tools.
+`remt` - reMarkable tablet command-line tools.
 
 Features
 ========
@@ -48,6 +48,9 @@ Create configuration file `~/.config/remt.ini` with contents::
 Install `remt` project with `pip`, i.e.:
 
     $ pip install --user remt
+
+Usage
+=====
 
 Acknowledgements
 ================

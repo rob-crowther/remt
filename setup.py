@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# remt - reMarkable tablet tools
+# remt - reMarkable tablet command-line tools
 #
 # Copyright (C) 2018 by Artur Wroblewski <wrobell@riseup.net>
 #
@@ -23,7 +23,7 @@ from setuptools import setup, find_packages
 setup(
     name='remt',
     version='0.1.0',
-    description='remt - reMarkable tablet tools',
+    description='remt - reMarkable tablet command-line tools',
     author='Artur Wroblewski',
     author_email='wrobell@riseup.net',
     url='https://gitlab.com/wrobell/remt',
@@ -33,7 +33,7 @@ setup(
     include_package_data=True,
     long_description=\
 """\
-reMarkable tablet tools.
+reMarkable tablet command-line tools.
 
 Features
 
