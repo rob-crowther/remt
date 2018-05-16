@@ -22,23 +22,42 @@ Drawing tool calculations.
 
 Drawing tools characteristics is as follows
 
-1. Marker
+1. Ballpoint
 
 - uses pressure
+- does not use tilt
+- uses a brush
+
+2. Marker
+
+- does not use pressure
 - uses tilt
 - uses a brush
 
-2. Sharp pencil
+3. Fineliner
+
+- does not use pressure
+- does not use tilt
+- does not use brush
+
+4. Sharp pencil
 
 - does not use pressure
 - does not use tilt
 - uses a brush
 
-3. Tilt pencil
+5. Tilt pencil
 
 - uses pressure to distinguish between two brush versions - lighter or
   darker
 - uses tilt
+- uses a brush
+
+6. Brush
+
+- uses pressure
+- uses tilt
+- does not use brush
 
 Use color alpha only for highlighter and eraser area. All other tools
 should use appropriate brushes at full opacity. For example, drawing with
