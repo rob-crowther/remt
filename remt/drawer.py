@@ -30,8 +30,8 @@ from collections import namedtuple
 from contextlib import contextmanager
 from functools import singledispatch, lru_cache, partial
 
+from . import tool
 from .data import *
-from .tool import draw_line_single, draw_line_multi
 from .pdf import pdf_open
 
 logger = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ STYLE_DEFAULT = Style(
     cairo.LINE_JOIN_ROUND,
     cairo.LINE_CAP_ROUND,
     None,
-    draw_line_single,
+    tool.single_line,
 )
 
 STYLE_HIGHLIGHTER = Style(
@@ -62,7 +62,7 @@ STYLE_HIGHLIGHTER = Style(
     cairo.LINE_JOIN_ROUND,
     cairo.LINE_CAP_SQUARE,
     None,
-    draw_line_single,
+    tool.single_line,
 )
 
 STYLE_ERASER = Style(
@@ -71,7 +71,7 @@ STYLE_ERASER = Style(
     cairo.LINE_JOIN_ROUND,
     cairo.LINE_CAP_ROUND,
     None,
-    draw_line_single,
+    tool.single_line,
 )
 
 
@@ -89,13 +89,13 @@ STYLE = {
 #    color=COLOR_STROKE[st.color],
 #    cap=cairo.LINE_CAP_BUTT,
 #    brush='pencil.png',
-#    draw_line=draw_line_multi,
+#    line_type=tool.multi_line,
 #),
     # Ballpoint
     2: lambda st: STYLE_DEFAULT._replace(
         width=32 * st.width ** 2 - 116 * st.width + 107,
         color=COLOR_STROKE[st.color],
-        draw_line=draw_line_multi,
+        line_type=tool.multi_line_ballpoint,
     ),
     # Fineliner
     4: lambda st: STYLE_DEFAULT._replace(
@@ -107,7 +107,7 @@ STYLE = {
 #    width=64 * st.width - 112,
 #    color=COLOR_STROKE[st.color],
 #    brush=None,
-#    draw_line=draw_line_multi,
+#    line_type=tool.multi_line,
 #),
     # Highlighter
     5: lambda st: STYLE_HIGHLIGHTER,
@@ -182,8 +182,6 @@ def _(stroke, context):
         logger.debug('Not supported pen for stroke: {}'.format(stroke))
         return
 
-    # on new path, the position of point is undefined and first `line_to`
-    # call acts as `move_to`
     cr = context.cr_ctx
     cr.save()
 
@@ -195,9 +193,31 @@ def _(stroke, context):
         brush = load_brush(style.brush)
         cr.set_source(brush)
 
-    style.draw_line(cr, stroke, style)
+    lines = style.line_type(stroke, style)
+    draw_multi_line(cr, lines)
 
     cr.restore()
+
+def draw_multi_line(cr, lines):
+    """
+    Draw multiple lines.
+
+    A line is tuple
+
+    - width of a line
+    - collection of points
+
+    :param cr: Cairo context.
+    :param lines: Collection of lines to draw.
+    """
+    for width, line in lines:
+        # on new path, the position of point is undefined and first
+        # `line_to` call acts as `move_to`
+        cr.new_path()
+        cr.set_line_width(width)
+        for x, y in line:
+            cr.line_to(x, y)
+        cr.stroke()
 
 @contextmanager
 def draw_context(fn_pdf, fn_out):

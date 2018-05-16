@@ -64,6 +64,11 @@ should use appropriate brushes at full opacity. For example, drawing with
 pencil in exactly the same place does not make it darker.
 """
 
+from functools import partial
+from operator import attrgetter
+
+point = attrgetter('x', 'y')
+
 def draw_line_multi(cr, stroke, style):
     """
     Draw a line varying width with multiple paths.
@@ -76,8 +81,6 @@ def draw_line_multi(cr, stroke, style):
     for s1, s2 in zip(segments[:-1], segments[1:]):
         cr.new_path()
 
-        # only pressure changes, so optimize by drawing lines with the same
-        # pressure as single path
         width = style.width
         width += s1.pressure ** 2048
 
@@ -86,18 +89,42 @@ def draw_line_multi(cr, stroke, style):
         cr.line_to(s2.x, s2.y)
         cr.stroke()
 
-def draw_line_single(cr, stroke, style):
+def single_line(stroke, style):
     """
-    Draw a line with single path.
+    Return collection containing single line.
 
-    :param cr: Cairo context.
     :param stroke: Stroke data.
     :param style: Style data.
     """
-    cr.new_path()
-    cr.set_line_width(style.width)
-    for seg in stroke.segments:
-        cr.line_to(seg.x, seg.y)
-    cr.stroke()
+    yield (style.width, (point(seg) for seg in stroke.segments))
+
+def multi_line(calc, stroke, style):
+    """
+    Return collection of lines of varying width. 
+
+    :param calc: Width calculator.
+    :param stroke: Stroke to convert to lines.
+    :param style: Stroke style information.
+    """
+    segments = stroke.segments
+
+    # only pressure changes, so optimize by drawing lines with the same
+    # pressure as single path
+    lines = (
+        (calc(style, s1), (point(s1), point(s2)))
+        for s1, s2 in zip(segments[:-1], segments[1:])
+    )
+    yield from lines
+
+def calc_width_ballpoint(style, segment):
+    """
+    Calculate ballpoint width.
+
+    :param style: Stroke style information.
+    :param segment: Segment data.
+    """
+    return style.width + segment.pressure ** 2048
+
+multi_line_ballpoint = partial(multi_line, calc_width_ballpoint)
 
 # vim: sw=4:et:ai
