@@ -96,6 +96,8 @@ STYLE = {
 #    brush=None,
 #    tool_line=tool.multi_line,
 #),
+## Erase area
+#8: STYLE_ERASER,
 
     # Ballpoint
     2: style_default(tool_line=tool.line_ballpoint),
@@ -111,9 +113,6 @@ STYLE = {
 
     # Sharp pencil
     7: style_default(tool_line=tool.line_sharp_pencil, brush='pencil.png'),
-
-    # Erase area
-    8: STYLE_ERASER,
 }
 
 
