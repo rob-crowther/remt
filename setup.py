@@ -60,7 +60,8 @@ Features
 
 - `remt` project can be used as a library for UI applications
 
-See project's homepage for installation instructions.
+See `project's homepage <https://gitlab.com/wrobell/remt>`_ for
+usage and installation instructions.
 
 This project is *not* an official project of the reMarkable company.
 
