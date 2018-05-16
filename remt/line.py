@@ -34,7 +34,7 @@ def draw_line_multi(cr, stroke, style):
         cr.new_path()
 
         # only pressure changes, so optimize by drawing lines with the same
-        # pressure as single path 
+        # pressure as single path
         width = style.width
         width += s1.pressure ** 2048
 
@@ -50,7 +50,7 @@ def draw_line_single(cr, stroke, style):
     :param cr: Cairo context.
     :param stroke: Stroke data.
     :param style: Style data.
-    """ 
+    """
     cr.new_path()
     cr.set_line_width(style.width)
     for seg in stroke.segments:
