@@ -24,7 +24,7 @@ import asyncio
 import remt.cmd
 from remt.error import RemtError
 
-desc = 'remt - reMarkable tablet command-line tools'
+desc = 'remt 0.2.0 - reMarkable tablet command-line tools'
 
 parser = argparse.ArgumentParser(description=desc)
 main_parser = parser.add_subparsers(dest='subcmd', title='subcommands')
