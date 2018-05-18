@@ -407,6 +407,7 @@ async def cmd_index(args):
                 print(header)
                 for text in texts:
                     print(text)
+                print()
 
 COMMANDS = {
     'ls': cmd_ls,
