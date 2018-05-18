@@ -22,59 +22,36 @@ Drawing tool calculations.
 
 Drawing tools characteristics is as follows
 
-1. Ballpoint
++---------------+----------+------+--------+
+| Tool          | Pressure | Tilt | Brush  |
++===============+==========+======+========+
+| Ballpoint     |    Y     |  N   |   Y    |
++---------------+----------+------+--------+
+| Marker        |    N     |  Y   |   Y    |
++---------------+----------+------+--------+
+| Fineliner     |    N     |  N   |   N    |
++---------------+----------+------+--------+
+| Sharp pencil  |    N     |  N   | pencil |
++---------------+----------+------+--------+
+| Tilt pencil   |  Y (1)   |  Y   |   Y    |
++---------------+----------+------+--------+
+| Brush         |    Y     |  Y   |   N    |
++---------------+----------+------+--------+
+| Highlighter   |    N     |  N   |   N    |
++---------------+----------+------+--------+
+| Eraser        |    N     |  N   |   N    |
++---------------+----------+------+--------+
 
-- uses pressure
-- does not use tilt
-- uses a brush
-
-2. Marker
-
-- does not use pressure
-- uses tilt
-- uses a brush
-
-3. Fineliner
-
-- does not use pressure
-- does not use tilt
-- does not use brush
-
-4. Sharp pencil
-
-- does not use pressure
-- does not use tilt
-- uses a brush
-
-5. Tilt pencil
-
-- uses pressure to distinguish between two brush versions - lighter or
-  darker
-- uses tilt
-- uses a brush
-
-6. Brush
-
-- uses pressure
-- uses tilt
-- does not use brush
-
-7. Highlighter
-
-- static width of 30px
-- does not use pressure
-- does not use tilt
-- does not use brush
-
-8. Eraser
-
-- does not use pressure
-- does not use tilt
-- does not use brush
+1. Tilt pencil uses pressure to distinguish between two brush
+   versions - lighter or darker.
+2. Highlighter has static width of 30px.
 
 Use color alpha only for highlighter and eraser area. All other tools
 should use appropriate brushes at full opacity. For example, drawing with
-pencil in exactly the same place does not make it darker.
+pencil in exactly the same place does not make it darker. This also allows
+to draw a single stroke of varying width with multiple lines in Cairo.
+Otherwise, due to line overlap, we would have to draw a stroke with an
+outline and fill.
 """
 
 from functools import partial
