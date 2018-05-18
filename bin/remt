@@ -70,6 +70,13 @@ sub_parser = main_parser.add_parser(
 sub_parser.add_argument('input', help='Path of file to import')
 sub_parser.add_argument('output', help='Target directory')
 
+# command: index
+sub_parser = main_parser.add_parser(
+    'index',
+    help='create index of PDF file annotations',
+)
+sub_parser.add_argument('input', help='Path of file to index')
+
 args = parser.parse_args()
 
 cmd = remt.cmd.COMMANDS.get(args.subcmd)

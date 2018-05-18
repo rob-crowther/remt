@@ -78,9 +78,7 @@ pencil in exactly the same place does not make it darker.
 """
 
 from functools import partial
-from operator import attrgetter
-
-point = attrgetter('x', 'y')
+from .util import to_point
 
 def single_line(calc, stroke):
     """
@@ -89,7 +87,7 @@ def single_line(calc, stroke):
     :param calc: Width calculator.
     :param stroke: Stroke data.
     """
-    yield (calc(stroke), (point(seg) for seg in stroke.segments))
+    yield (calc(stroke), (to_point(seg) for seg in stroke.segments))
 
 def multi_line(calc, stroke):
     """
@@ -103,7 +101,7 @@ def multi_line(calc, stroke):
     # only pressure changes, so optimize by drawing lines with the same
     # pressure as single path
     lines = (
-        (calc(stroke, s1), (point(s1), point(s2)))
+        (calc(stroke, s1), (to_point(s1), to_point(s2)))
         for s1, s2 in zip(segments[:-1], segments[1:])
     )
     yield from lines

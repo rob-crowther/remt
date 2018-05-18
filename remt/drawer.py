@@ -30,14 +30,11 @@ from collections import namedtuple
 from contextlib import contextmanager
 from functools import singledispatch, lru_cache, partial
 
-from . import tool
+from . import const, tool
 from .data import *
-from .pdf import pdf_open
+from .pdf import pdf_open, pdf_scale
 
 logger = logging.getLogger(__name__)
-
-WIDTH = 1404
-HEIGHT = 1872
 
 COLOR_STROKE = {
     0: Color(0, 0, 0, 1),
@@ -96,9 +93,6 @@ STYLE = {
 #    brush=None,
 #    tool_line=tool.multi_line,
 #),
-## Erase area
-#8: STYLE_ERASER,
-
     # Ballpoint
     2: style_default(tool_line=tool.line_ballpoint),
 
@@ -113,6 +107,9 @@ STYLE = {
 
     # Sharp pencil
     7: style_default(tool_line=tool.line_sharp_pencil, brush='pencil.png'),
+
+    # Erase area
+    8: STYLE_ERASER,
 }
 
 
@@ -148,7 +145,7 @@ def _(page, context):
 
         # render remarkable lines data at scale to fit the document
         cr.save()  # to be restored at page end
-        factor = max(w / WIDTH, h / HEIGHT)
+        factor = pdf_scale(pdf_page)
         cr.scale(factor, factor)
 
 @draw.register(PageEnd)
@@ -212,7 +209,7 @@ def draw_multi_line(cr, lines):
 @contextmanager
 def draw_context(fn_pdf, fn_out):
     pdf_doc = pdf_open(fn_pdf) if fn_pdf else None
-    surface = cairo.PDFSurface(fn_out, WIDTH, HEIGHT)
+    surface = cairo.PDFSurface(fn_out, const.PAGE_WIDTH, const.PAGE_HEIGHT)
     try:
         cr_ctx = cairo.Context(surface)
         context = Context(surface, cr_ctx, pdf_doc)

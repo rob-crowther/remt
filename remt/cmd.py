@@ -32,11 +32,14 @@ from datetime import datetime
 from collections import namedtuple
 from tempfile import TemporaryDirectory
 from cytoolz.dicttoolz import assoc, get_in
+from cytoolz.functoolz import flip, curry
 from uuid import uuid4 as uuid
 
 import remt
+from .data import Page, Stroke
 from .error import *
-from .pdf import pdf_open
+from .util import split
+from .pdf import pdf_open, pdf_text
 
 
 BASE_DIR = '/home/root/.local/share/remarkable/xochitl'
@@ -362,11 +365,55 @@ async def cmd_import(args):
 
         await ctx.sftp.mput(fn_base + '.*', BASE_DIR)
 
+#
+# cmd: index
+#
+
+async def cmd_index(args):
+    to_text = curry(pdf_text)
+    is_item = flip(isinstance, (Page, Stroke))
+    is_page = flip(isinstance, Page)
+
+    fmt_header = lambda p: \
+        '#. Page {} ({})\n'.format(p.get_label(), p.get_index())
+    fmt_text = '   * ``{}``'.format
+
+    path = norm_path(args.input)
+
+    async with remt_ctx() as ctx:
+        data = fn_metadata(ctx.meta, path)
+
+        to_copy = fn_path(data)
+        await ctx.sftp.mget(to_copy, ctx.dir_data, recurse=True)
+
+        fin = fn_path(data, base=ctx.dir_data, ext='lines')
+        fin_pdf = fn_path(data, base=ctx.dir_data, ext='pdf')
+        with open(fin, 'rb') as f:
+            pdf_doc = pdf_open(fin_pdf)
+            get_page = pdf_doc.get_page
+
+            items = remt.parse(f)
+            # find pages and strokes
+            items = (v for v in items if is_item(v))
+            # split into (page, strokes)
+            items = split(is_page, items)
+            # get PDF pages
+            items = ((get_page(p.number), s) for p, s in items)
+            # for each page and stroke get text under stroke
+            items = ((p, map(to_text(p), s)) for p, s in items)
+            # page header and each highlighted text formatted
+            items = ((fmt_header(p), map(fmt_text, t)) for p, t in items)
+            for header, texts in items:
+                print(header)
+                for text in texts:
+                    print(text)
+
 COMMANDS = {
     'ls': cmd_ls,
     'mkdir': cmd_mkdir,
     'export': cmd_export,
     'import': cmd_import,
+    'index': cmd_index,
 }
 
 # vim: sw=4:et:ai

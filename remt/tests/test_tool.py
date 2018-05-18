@@ -29,21 +29,20 @@ def test_single_line():
     Test calculation of a single line.
     """
     stroke = Stroke(
-        0, 0, 0, 0,
+        0, 0, 0, 10,
         [
             Segment(0, 0, 0, 0, 0, 0),
             Segment(0, 1, 1, 0, 0, 0),
             Segment(0, 2, 2, 0, 0, 0),
         ]
     )
-    style = Style(10, 0, 0, 0, 0, 0)
-
-    result = tool.single_line(stroke, style)
+    calc = lambda v: v.width * 2
+    result = tool.single_line(calc, stroke)
     width, points = next(result)
 
     # no more lines
     assert next(result, None) is None
-    assert 10 == width
+    assert 20 == width
     assert [(0, 0), (1, 1), (2, 2)] == list(points)
 
 def test_multi_line():
@@ -51,17 +50,15 @@ def test_multi_line():
     Test calculation of a multi line.
     """
     stroke = Stroke(
-        0, 0, 0, 0,
+        0, 0, 0, 10,
         [
             Segment(0, 0, 0, 1, 0, 0),
             Segment(0, 1, 1, 2, 0, 0),
             Segment(0, 2, 2, 3, 0, 0),
         ]
     )
-    style = Style(10, 0, 0, 0, 0, 0)
-
     calc = lambda st, seg: st.width ** seg.pressure
-    l1, l2 = tool.multi_line(calc, stroke, style)
+    l1, l2 = tool.multi_line(calc, stroke)
 
     assert (10, ((0, 0), (1, 1))) == l1
     assert (100, ((1, 1), (2, 2))) == l2
