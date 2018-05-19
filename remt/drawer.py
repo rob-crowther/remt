@@ -214,7 +214,6 @@ def draw_fill(cr):
     Draw Cairo shape and fill.
     """
     cr.close_path()
-    cr.stroke_preserve()
     cr.fill()
 
 @contextmanager
