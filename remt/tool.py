@@ -41,10 +41,13 @@ Drawing tools characteristics is as follows
 +---------------+----------+------+--------+
 | Eraser        |    N     |  N   |   N    |
 +---------------+----------+------+--------+
+| Erase Area    |    N     |  N   |  N (3) |
++---------------+----------+------+--------+
 
 1. Tilt pencil uses pressure to distinguish between two brush
    versions - lighter or darker.
 2. Highlighter has static width of 30px.
+3. Some shapes have an irregular edge, could it be due to a brush?
 
 Use color alpha only for highlighter and eraser area. All other tools
 should use appropriate brushes at full opacity. For example, drawing with
@@ -120,7 +123,8 @@ def calc_width_ballpoint(stroke, segment):
 line_ballpoint = partial(multi_line, calc_width_ballpoint)
 line_fineliner = partial(single_line, calc_width_fineliner)
 line_sharp_pencil = partial(single_line, calc_width_sharp_pencil)
-line_highlighter = partial(single_line, lambda *args: 30)
+line_highlighter = partial(single_line, lambda s: 30)
 line_eraser = partial(single_line, calc_width_eraser)
+line_erase_area = partial(single_line, lambda s: 1)
 
 # vim: sw=4:et:ai

@@ -25,6 +25,7 @@ Features
     - sharp pencil with pencil brush
     - highlighter
     - eraser
+    - erase area
 
 - `remt` project can be used as a library for UI applications
 
@@ -33,7 +34,6 @@ What does not work yet
 - marker
 - tilt pencil
 - brush
-- eraser area
 - make pencil brush more like the one on reMarkable tablet
 - make ballpoint brush more like the one on reMarkable tablet
 

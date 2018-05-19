@@ -109,7 +109,7 @@ STYLE = {
     7: style_default(tool_line=tool.line_sharp_pencil, brush='pencil.png'),
 
     # Erase area
-    8: STYLE_ERASER,
+    8: STYLE_ERASER._replace(tool_line=tool.line_erase_area),
 }
 
 
@@ -172,6 +172,8 @@ def _(stroke, context):
     cr = context.cr_ctx
     cr.save()
 
+    draw_stroke = partial(draw_fill, cr) if stroke.pen == 8 else cr.stroke
+
     cr.set_source_rgba(*color)
     cr.set_line_join(style.join)
     cr.set_line_cap(style.cap)
@@ -181,11 +183,11 @@ def _(stroke, context):
         cr.set_source(brush)
 
     lines = style.tool_line(stroke)
-    draw_multi_line(cr, lines)
+    draw_multi_line(cr, draw_stroke, lines)
 
     cr.restore()
 
-def draw_multi_line(cr, lines):
+def draw_multi_line(cr, draw_stroke, lines):
     """
     Draw multiple lines.
 
@@ -195,6 +197,7 @@ def draw_multi_line(cr, lines):
     - collection of points
 
     :param cr: Cairo context.
+    :param draw_stroke: Drawing stroke function (i.e. line or filled area).
     :param lines: Collection of lines to draw.
     """
     for width, points in lines:
@@ -204,7 +207,16 @@ def draw_multi_line(cr, lines):
         cr.set_line_width(width)
         for x, y in points:
             cr.line_to(x, y)
-        cr.stroke()
+        draw_stroke()
+
+def draw_fill(cr):
+    """
+    Draw Cairo shape and fill.
+    """
+    cr.set_fill_rule(cairo.FILL_RULE_WINDING)
+    cr.close_path()
+    cr.stroke_preserve()
+    cr.fill()
 
 @contextmanager
 def draw_context(fn_pdf, fn_out):

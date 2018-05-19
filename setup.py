@@ -58,6 +58,7 @@ Features
     - sharp pencil with pencil brush
     - highlighter
     - eraser
+    - erase area
 
 - `remt` project can be used as a library for UI applications
 
