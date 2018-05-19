@@ -213,7 +213,6 @@ def draw_fill(cr):
     """
     Draw Cairo shape and fill.
     """
-    cr.set_fill_rule(cairo.FILL_RULE_WINDING)
     cr.close_path()
     cr.stroke_preserve()
     cr.fill()
