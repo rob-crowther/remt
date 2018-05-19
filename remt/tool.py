@@ -55,6 +55,9 @@ pencil in exactly the same place does not make it darker. This also allows
 to draw a single stroke of varying width with multiple lines in Cairo.
 Otherwise, due to line overlap, we would have to draw a stroke with an
 outline and fill.
+
+Try tilt test example from `http://www.wacomeng.com/windows/index.html` for
+tilt calculations.
 """
 
 from functools import partial
