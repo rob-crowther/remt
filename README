@@ -45,7 +45,7 @@ Create configuration file `~/.config/remt.ini` with contents::
     [connection]
     host=10.11.99.1
     user=root
-    password=<your reMarkable tablet password>
+    password=<your reMarkable tablet password if not using ssh key>
 
 Install `remt` project with `pip`, i.e.:
 
