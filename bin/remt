@@ -65,9 +65,9 @@ sub_parser.add_argument('output', help='Output filename')
 # command: import
 sub_parser = main_parser.add_parser(
     'import',
-    help='import a PDF file onto the tablet',
+    help='import a number of PDF files onto the tablet',
 )
-sub_parser.add_argument('input', help='Path of file to import')
+sub_parser.add_argument('input', nargs='+', help='List of files to import')
 sub_parser.add_argument('output', help='Target directory')
 
 # command: index

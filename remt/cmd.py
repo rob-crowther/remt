@@ -90,6 +90,11 @@ def read_config():
 
 @async_contextmanager
 async def remt_ctx():
+    """
+    Create a `remt` project context.
+
+    The function is an asynchronous context manager.
+    """
     config = read_config()
 
     host = config.get('connection', 'host')
@@ -329,41 +334,54 @@ async def cmd_export(args):
 #
 # cmd: import
 #
+def _prepare_import_data(ctx, fn_in, out_uuid):
+    """
+    Prepare import data for a file to be uploaded onto a reMarkable
+    tablet.
+
+    :param ctx: `remt` project context.
+    :param fn_in: File to be imported.
+    :param out_uuid: UUID of the output directory located on a reMarkable
+        tablet.
+    """
+    name = os.path.basename(fn_in)
+    fn_base = os.path.join(ctx.dir_data, str(uuid()))
+    data = create_metadata(False, out_uuid, name)
+
+    fn_pdf = fn_base + '.pdf'
+    shutil.copy(fn_in, fn_pdf)
+    with open(fn_base + '.metadata', 'w') as f:
+        json.dump(data, f)
+
+    # empty content file required
+    with open(fn_base + '.content', 'w') as f:
+        page_count = pdf_open(fn_pdf).get_n_pages()
+        content = {
+            'fileType': 'pdf',
+            'lastOpenedPage': 0,
+            'lineHeight': -1,
+            'pageCount': page_count,
+
+        }
+        json.dump(content, f)
+    return fn_base + '.*'
 
 async def cmd_import(args):
     """
-    Import a file onto a reMarkable tablet.
+    Import a number of files onto a directory on a reMarkable tablet.
     """
-    fn_in = args.input
-    name = os.path.basename(fn_in)
-    parent = norm_path(args.output)
+    output = norm_path(args.output)
 
     async with remt_ctx() as ctx:
-        out_meta = fn_metadata(ctx.meta, parent)
+        out_meta = fn_metadata(ctx.meta, output)
         if out_meta['type'] != 'CollectionType':
             raise FileError('Destination path is not a directory')
 
-        fn_base = os.path.join(ctx.dir_data, str(uuid()))
-        data = create_metadata(False, out_meta['uuid'], name)
-
-        fn_pdf = fn_base + '.pdf'
-        shutil.copy(fn_in, fn_pdf)
-        with open(fn_base + '.metadata', 'w') as f:
-            json.dump(data, f)
-
-        # empty content file required
-        with open(fn_base + '.content', 'w') as f:
-            page_count = pdf_open(fn_pdf).get_n_pages()
-            content = {
-                'fileType': 'pdf',
-                'lastOpenedPage': 0,
-                'lineHeight': -1,
-                'pageCount': page_count,
-
-            }
-            json.dump(content, f)
-
-        await ctx.sftp.mput(fn_base + '.*', BASE_DIR)
+        out_uuid = out_meta['uuid']
+        to_import = [
+            _prepare_import_data(ctx, fn, out_uuid) for fn in args.input
+        ]
+        await ctx.sftp.mput(to_import, BASE_DIR)
 
 #
 # cmd: index
