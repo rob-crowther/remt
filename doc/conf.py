@@ -8,7 +8,7 @@ project = 'remt'
 source_suffix = '.rst'
 master_doc = 'index'
 
-version = release = 0.4.1
+version = release = '0.4.1'
 copyright = 'remt team'
 
 epub_basename = 'remt - {}'.format(version)
