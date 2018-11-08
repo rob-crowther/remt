@@ -59,7 +59,7 @@ summary of the commands can be obtained with `--help` option, i.e.::
     $ remt --help
     usage: remt [-h] {ls,mkdir,export,import,index} ...
 
-    remt 0.4.1 - reMarkable tablet command-line tools
+    remt 0.5.0 - reMarkable tablet command-line tools
 
     optional arguments:
       -h, --help            show this help message and exit
