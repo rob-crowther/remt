@@ -22,6 +22,7 @@ before_script:
 
 test:
   script:
-  - pip install -r requirements-test.txt
+  - pip install git+https://github.com/pygobject/pycairo.git
+  - pip install -r requirements.txt
   - PYTHONPATH=. pytest -vv
   - pip install .
