@@ -28,17 +28,17 @@ import json
 import os.path
 import shutil
 from aiocontext import async_contextmanager
-from datetime import datetime
 from collections import namedtuple
-from tempfile import TemporaryDirectory
 from cytoolz.dicttoolz import assoc, get_in
 from cytoolz.functoolz import flip, curry
+from datetime import datetime
+from tempfile import TemporaryDirectory
 from uuid import uuid4 as uuid
 
 import remt
 from .data import Page, Stroke
 from .error import *
-from .util import split
+from .util import split, flatten
 from .pdf import pdf_open, pdf_text
 
 
@@ -120,14 +120,14 @@ async def remt_ctx():
         else:
             raise
 
-def fn_path(data, base=BASE_DIR, ext='*'):
+def fn_path(data, base=BASE_DIR, ext='.*'):
     """
     Having metadata object create UUID based path of a file created by
     reMarkable tablet.
 
     :param data: Metadata object.
     """
-    return '{}/{}.{}'.format(base, data['uuid'], ext)
+    return '{}/{}{}'.format(base, data['uuid'], ext)
 
 def norm_path(path):
     """
@@ -152,6 +152,37 @@ def fn_metadata(meta, path):
     if not data:
         raise FileError('File or directory not found: {}'.format(path))
     return data
+
+#
+# parsing pages from a collection of files in reMarkable lines format
+#
+
+def parse_pages(ctx, data):
+    get_fin = lambda p: os.path.join(ctx.dir_data, data['uuid'], p) + '.rm'
+    pages = data['content'].get('pages')
+    if pages is None:
+        pages = [str(i) for i in range(data['content']['pageCount'])]
+    items = flatten(parse_page(get_fin(p)) for p in pages)
+    yield from items
+
+
+def parse_page(fin):
+    """
+    Parse page from reMarkable lines file.
+
+    Return empty page if file does not exist.
+
+    .. note::
+       Version 3 of the reMarkable lines format can contain only single
+       page.
+
+    :param fin: reMarkable lines file.
+    """
+    if os.path.exists(fin):
+        with open(fin, 'rb') as f:
+            items = yield from remt.parse(f)
+    else:
+        yield from remt.empty_page()
 
 #
 # metadata
@@ -321,28 +352,22 @@ async def cmd_mkdir(args):
 #
 # cmd: export
 #
-
 async def cmd_export(args):
     path = norm_path(args.input)
 
     async with remt_ctx() as ctx:
         data = fn_metadata(ctx.meta, path)
-        pages = data['content']['pages']
 
-        to_copy = fn_path(data).replace('.*', '*')  # FIXME: fix path generaton
-        await ctx.sftp.mget(to_copy.replace('.*', '*'), ctx.dir_data, recurse=True)
+        to_copy = fn_path(data, ext='*')
+        await ctx.sftp.mget(to_copy, ctx.dir_data, recurse=True)
 
-        # FIXME: re-add PDF support
-        fin_pdf = fn_path(data, base=ctx.dir_data, ext='pdf')
+        fin_pdf = fn_path(data, base=ctx.dir_data, ext='.pdf')
         fin_pdf = fin_pdf if os.path.exists(fin_pdf) else None
-        r_ctx = ctx
+
+        pages = parse_pages(ctx, data)
         with remt.draw_context(fin_pdf, args.output) as ctx:
             for p in pages:
-                fin = os.path.join(r_ctx.dir_data, data['uuid'], p) + '.rm'
-                #fin = fn_path(data, base=r_ctx.dir_data, ext='rm')
-                with open(fin, 'rb') as f:
-                    for item in remt.parse(f):
-                        remt.draw(item, ctx)
+                remt.draw(p, ctx)
 
 #
 # cmd: import
@@ -414,11 +439,11 @@ async def cmd_index(args):
     async with remt_ctx() as ctx:
         data = fn_metadata(ctx.meta, path)
 
-        to_copy = fn_path(data)
+        to_copy = fn_path(data, ext='*')
         await ctx.sftp.mget(to_copy, ctx.dir_data, recurse=True)
 
-        fin = fn_path(data, base=ctx.dir_data, ext='lines')
-        fin_pdf = fn_path(data, base=ctx.dir_data, ext='pdf')
+        fin = fn_path(data, base=ctx.dir_data, ext='.lines')
+        fin_pdf = fn_path(data, base=ctx.dir_data, ext='.pdf')
         with open(fin, 'rb') as f:
             pdf_doc = pdf_open(fin_pdf)
             get_page = pdf_doc.get_page

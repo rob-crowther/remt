@@ -21,10 +21,11 @@
 `remt` project utilities.
 """
 
-from itertools import groupby
+from itertools import groupby, chain
 from operator import attrgetter
 from cytoolz.itertoolz import partition
 
+flatten = chain.from_iterable
 to_point = attrgetter('x', 'y')
 
 def split(key, seq):

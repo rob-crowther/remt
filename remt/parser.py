@@ -22,13 +22,11 @@ reMarkable tablet lines format parser.
 """
 
 import math
+import os.path
 import struct
-from collections import namedtuple
-from itertools import chain
 
 from .data import *
-
-flatten = chain.from_iterable
+from .util import flatten
 
 
 HEADER_START = b'reMarkable .lines file, version=3' + b' ' * 10
@@ -83,5 +81,12 @@ def parse(data):
     assert header == HEADER_START
 
     yield from parse_page(data)
+
+def empty_page():
+    """
+    Generate empty page for document rendering.
+    """
+    yield Page()
+    yield PageEnd()
 
 # vim: sw=4:et:ai

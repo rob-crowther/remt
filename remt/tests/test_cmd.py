@@ -29,13 +29,12 @@ import pytest
 from unittest import mock
 
 
-
 def test_fn_path():
     """
     Test creating UUID based path from metadata.
     """
     meta = {'uuid': 'xyz'}
-    result = r_cmd.fn_path(meta, base='/x/y', ext='met')
+    result = r_cmd.fn_path(meta, base='/x/y', ext='.met')
     assert '/x/y/xyz.met' == result
 
 def test_ls_line():
