@@ -23,6 +23,7 @@ reMarkable strokes drawing using Cairo library.
 
 import cairo
 import io
+import itertools
 import logging
 import os.path
 import pkgutil
@@ -130,12 +131,13 @@ def draw(item, context):
 @draw.register(Page)
 def _(page, context):
     surface = context.cr_surface
-    if page.number:
+    page_number = next(context.page_number)
+    if page_number:
         surface.show_page()
 
     if context.pdf_doc:
         # get page and set size of the current page of the cairo surface
-        pdf_page = context.pdf_doc.get_page(page.number)
+        pdf_page = context.pdf_doc.get_page(page_number)
         w, h = pdf_page.get_size()
         surface.set_size(w, h)
 
@@ -222,7 +224,7 @@ def draw_context(fn_pdf, fn_out):
     surface = cairo.PDFSurface(fn_out, const.PAGE_WIDTH, const.PAGE_HEIGHT)
     try:
         cr_ctx = cairo.Context(surface)
-        context = Context(surface, cr_ctx, pdf_doc)
+        context = Context(surface, cr_ctx, pdf_doc, itertools.count())
         yield context
     finally:
         surface.finish()

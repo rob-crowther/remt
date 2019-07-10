@@ -19,8 +19,9 @@
 
 from collections import namedtuple
 
-Page = namedtuple('Page', ['number'])
-PageEnd = namedtuple('PageEnd', ['number'])
+class Page: pass
+class PageEnd: pass
+
 Layer = namedtuple('Layer', ['number'])
 Stroke = namedtuple(
     'Stroke',
@@ -28,7 +29,7 @@ Stroke = namedtuple(
 )
 Segment = namedtuple(
     'Segment',
-    ['number', 'x', 'y', 'pressure', 'tilt_x', 'tilt_y'],
+    ['number', 'x', 'y', 'speed', 'direction', 'width', 'pressure'],
 )
 
 Style = namedtuple(
@@ -36,6 +37,6 @@ Style = namedtuple(
     ['color', 'join', 'cap', 'brush', 'tool_line']
 )
 Color = namedtuple('Color', ['red', 'green', 'blue', 'alpha'])
-Context = namedtuple('Context', ['cr_surface', 'cr_ctx', 'pdf_doc'])
+Context = namedtuple('Context', ['cr_surface', 'cr_ctx', 'pdf_doc', 'page_number'])
 
 # vim: sw=4:et:ai

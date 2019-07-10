@@ -192,9 +192,18 @@ async def read_meta(sftp, dir_meta):
     Read metadata from a reMarkable tablet.
     """
     await sftp.mget(BASE_DIR + '/*.metadata', dir_meta)
+    await sftp.mget(BASE_DIR + '/*.content', dir_meta)
 
-    files = glob.glob(dir_meta + '/*.metadata')
-    data = (json.load(open(fn)) for fn in files)
+    files = sorted(glob.glob(dir_meta + '/*.metadata'))
+    files_content = sorted(glob.glob(dir_meta + '/*.content'))
+    assert len(files) == len(files_content)
+
+    data = [json.load(open(fn)) for fn in files]
+    content = (json.load(open(fn)) for fn in files_content)
+
+    for m, c in zip(data, content):
+        m['content'] = c
+
     data = (v for v in data if not v.get('deleted'))
 
     uuids = (os.path.basename(v) for v in files)
@@ -318,18 +327,22 @@ async def cmd_export(args):
 
     async with remt_ctx() as ctx:
         data = fn_metadata(ctx.meta, path)
+        pages = data['content']['pages']
 
-        to_copy = fn_path(data)
-        await ctx.sftp.mget(to_copy, ctx.dir_data, recurse=True)
+        to_copy = fn_path(data).replace('.*', '*')  # FIXME: fix path generaton
+        await ctx.sftp.mget(to_copy.replace('.*', '*'), ctx.dir_data, recurse=True)
 
-        fin = fn_path(data, base=ctx.dir_data, ext='lines')
+        # FIXME: re-add PDF support
         fin_pdf = fn_path(data, base=ctx.dir_data, ext='pdf')
         fin_pdf = fin_pdf if os.path.exists(fin_pdf) else None
-        with open(fin, 'rb') as f, \
-                remt.draw_context(fin_pdf, args.output) as ctx:
-
-            for item in remt.parse(f):
-                remt.draw(item, ctx)
+        r_ctx = ctx
+        with remt.draw_context(fin_pdf, args.output) as ctx:
+            for p in pages:
+                fin = os.path.join(r_ctx.dir_data, data['uuid'], p) + '.rm'
+                #fin = fn_path(data, base=r_ctx.dir_data, ext='rm')
+                with open(fin, 'rb') as f:
+                    for item in remt.parse(f):
+                        remt.draw(item, ctx)
 
 #
 # cmd: import

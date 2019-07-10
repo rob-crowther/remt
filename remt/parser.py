@@ -31,12 +31,12 @@ from .data import *
 flatten = chain.from_iterable
 
 
-HEADER_START = b'reMarkable lines with selections and layers'
-FMT_HEADER_PAGE = struct.Struct('<{}sI'.format(len(HEADER_START)))
+HEADER_START = b'reMarkable .lines file, version=3' + b' ' * 10
+FMT_HEADER_PAGE = struct.Struct('<{}s'.format(len(HEADER_START)))
 FMT_PAGE = struct.Struct('<BBH') # TODO might be 'I'
 FMT_LAYER = struct.Struct('<I')
 FMT_STROKE = struct.Struct('<IIIfI')
-FMT_SEGMENT = struct.Struct('<fffff')
+FMT_SEGMENT = struct.Struct('<ffffff')
 
 
 def parse_item(fmt, fin):
@@ -51,8 +51,8 @@ def parse_item(fmt, fin):
     return fmt.unpack(buff)
 
 def parse_segment(n_seg, data):
-    x, y, pressure, tilt_x, tilt_y = parse_item(FMT_SEGMENT, data)
-    return Segment(n_seg, x, y, pressure, tilt_x, tilt_y)
+    x, y, speed, direction, width, pressure = parse_item(FMT_SEGMENT, data)
+    return Segment(n_seg, x, y, speed, direction, width, pressure)
 
 def parse_stroke(n_stroke, data):
     pen, color, _, width, n = parse_item(FMT_STROKE, data)
@@ -70,19 +70,18 @@ def parse_layer(n_layer, data):
     yield Layer(n_layer)
     yield from flatten(items)
     
-def parse_page(n_page, data):
+def parse_page(data):
     n, _, _ = parse_item(FMT_PAGE, data)
     items = (parse_layer(i, data) for i in range(n))
 
-    yield Page(n_page)
+    yield Page()
     yield from flatten(items)
-    yield PageEnd(n_page)
+    yield PageEnd()
 
 def parse(data):
-    header, n = parse_item(FMT_HEADER_PAGE, data)
+    header, *_ = parse_item(FMT_HEADER_PAGE, data)
     assert header == HEADER_START
 
-    items = (parse_page(i, data) for i in range(n))
-    yield from flatten(items)
+    yield from parse_page(data)
 
 # vim: sw=4:et:ai
