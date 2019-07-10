@@ -31,9 +31,9 @@ def test_single_line():
     stroke = Stroke(
         0, 0, 0, 10,
         [
-            Segment(0, 0, 0, 0, 0, 0),
-            Segment(0, 1, 1, 0, 0, 0),
-            Segment(0, 2, 2, 0, 0, 0),
+            Segment(0, 0, 0, 0, 0, 0, 0),
+            Segment(0, 1, 1, 0, 0, 0, 0),
+            Segment(0, 2, 2, 0, 0, 0, 0),
         ]
     )
     calc = lambda v: v.width * 2
@@ -52,9 +52,9 @@ def test_multi_line():
     stroke = Stroke(
         0, 0, 0, 10,
         [
-            Segment(0, 0, 0, 1, 0, 0),
-            Segment(0, 1, 1, 2, 0, 0),
-            Segment(0, 2, 2, 3, 0, 0),
+            Segment(0, 0, 0, 0, 0, 0, 1),
+            Segment(0, 1, 1, 0, 0, 0, 2),
+            Segment(0, 2, 2, 0, 0, 0, 3),
         ]
     )
     calc = lambda st, seg: st.width ** seg.pressure
