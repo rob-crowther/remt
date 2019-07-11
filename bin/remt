@@ -59,6 +59,12 @@ sub_parser = main_parser.add_parser(
     'export',
     help='export a notebook or an annotated PDF file from the tablet',
 )
+sub_parser.add_argument(
+    '-r', '--remt-render',
+    action='store_true',
+    default=False,
+    help='Use remt renderer for document drawing'
+)
 sub_parser.add_argument('input', help='Path of file to export')
 sub_parser.add_argument('output', help='Output filename')
 

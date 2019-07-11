@@ -27,6 +27,7 @@ import glob
 import json
 import os.path
 import shutil
+import urllib.request
 from aiocontext import async_contextmanager
 from collections import namedtuple
 from cytoolz.dicttoolz import assoc, get_in
@@ -357,17 +358,45 @@ async def cmd_export(args):
 
     async with remt_ctx() as ctx:
         data = fn_metadata(ctx.meta, path)
+        f = _export_remt if args.remt_render else _export_rm
+        await f(ctx, data, args.output)
 
-        to_copy = fn_path(data, ext='*')
-        await ctx.sftp.mget(to_copy, ctx.dir_data, recurse=True)
+async def _export_remt(ctx, data, fout):
+    """
+    Export notebook or PDF document using `remt` renderer.
 
-        fin_pdf = fn_path(data, base=ctx.dir_data, ext='.pdf')
-        fin_pdf = fin_pdf if os.path.exists(fin_pdf) else None
+    :param ctx: `remt` project context.
+    :param data: Metadata of input file.
+    :param fout: Filename of output file.
+    """
+    to_copy = fn_path(data, ext='*')
+    await ctx.sftp.mget(to_copy, ctx.dir_data, recurse=True)
 
-        pages = parse_pages(ctx, data)
-        with remt.draw_context(fin_pdf, args.output) as ctx:
-            for p in pages:
-                remt.draw(p, ctx)
+    fin_pdf = fn_path(data, base=ctx.dir_data, ext='.pdf')
+    fin_pdf = fin_pdf if os.path.exists(fin_pdf) else None
+
+    pages = parse_pages(ctx, data)
+    with remt.draw_context(fin_pdf, fout) as ctx:
+        for p in pages:
+            remt.draw(p, ctx)
+
+async def _export_rm(ctx, data, fout):
+    """
+    Export notebook or PDF document using reMarkable tablet device.
+
+    :param ctx: `remt` project context.
+    :param data: Metadata of input file.
+    :param fout: Filename of output file.
+    """
+    host = ctx.config.get('connection', 'host')
+    uuid = data['uuid']
+    url = 'http://{}/download/{}/placeholder'.format(host, uuid)
+
+    response = urllib.request.urlopen(url)
+    with open(fout, 'wb') as f:
+        read = lambda: response.read(1024 ** 2)
+        for data in iter(read, b''):
+            f.write(data)
 
 #
 # cmd: import
