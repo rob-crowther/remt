@@ -68,25 +68,27 @@ def parse_layer(n_layer, data):
     yield Layer(n_layer)
     yield from flatten(items)
     
-def parse_page(data):
+def parse_page(data, page_number):
     n, _, _ = parse_item(FMT_PAGE, data)
     items = (parse_layer(i, data) for i in range(n))
 
-    yield Page()
+    yield Page(page_number)
     yield from flatten(items)
-    yield PageEnd()
+    yield PageEnd(page_number)
 
-def parse(data):
+def parse(data, page_number):
     header, *_ = parse_item(FMT_HEADER_PAGE, data)
     assert header == HEADER_START
 
-    yield from parse_page(data)
+    yield from parse_page(data, page_number)
 
-def empty_page():
+def empty_page(page_number):
     """
     Generate empty page for document rendering.
+
+    :param page_number: Page number to be associated with the page.
     """
-    yield Page()
-    yield PageEnd()
+    yield Page(page_number)
+    yield PageEnd(page_number)
 
 # vim: sw=4:et:ai

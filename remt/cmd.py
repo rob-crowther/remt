@@ -158,16 +158,16 @@ def fn_metadata(meta, path):
 # parsing pages from a collection of files in reMarkable lines format
 #
 
-def parse_pages(ctx, data):
+def parse_document(ctx, data):
     get_fin = lambda p: os.path.join(ctx.dir_data, data['uuid'], p) + '.rm'
     pages = data['content'].get('pages')
     if pages is None:
         pages = [str(i) for i in range(data['content']['pageCount'])]
-    items = flatten(parse_page(get_fin(p)) for p in pages)
+    items = flatten(parse_page(get_fin(p), i) for i, p in enumerate(pages))
     yield from items
 
 
-def parse_page(fin):
+def parse_page(fin, page_number):
     """
     Parse page from reMarkable lines file.
 
@@ -178,12 +178,13 @@ def parse_page(fin):
        page.
 
     :param fin: reMarkable lines file.
+    :param page_number: Page number to be associated with the page.
     """
     if os.path.exists(fin):
         with open(fin, 'rb') as f:
-            items = yield from remt.parse(f)
+            items = yield from remt.parse(f, page_number)
     else:
-        yield from remt.empty_page()
+        yield from remt.empty_page(page_number)
 
 #
 # metadata
@@ -375,10 +376,10 @@ async def _export_remt(ctx, data, fout):
     fin_pdf = fn_path(data, base=ctx.dir_data, ext='.pdf')
     fin_pdf = fin_pdf if os.path.exists(fin_pdf) else None
 
-    pages = parse_pages(ctx, data)
+    items = parse_document(ctx, data)
     with remt.draw_context(fin_pdf, fout) as ctx:
-        for p in pages:
-            remt.draw(p, ctx)
+        for item in items:
+            remt.draw(item, ctx)
 
 async def _export_rm(ctx, data, fout):
     """
@@ -471,28 +472,26 @@ async def cmd_index(args):
         to_copy = fn_path(data, ext='*')
         await ctx.sftp.mget(to_copy, ctx.dir_data, recurse=True)
 
-        fin = fn_path(data, base=ctx.dir_data, ext='.lines')
         fin_pdf = fn_path(data, base=ctx.dir_data, ext='.pdf')
-        with open(fin, 'rb') as f:
-            pdf_doc = pdf_open(fin_pdf)
-            get_page = pdf_doc.get_page
+        pdf_doc = pdf_open(fin_pdf)
+        get_page = pdf_doc.get_page
 
-            items = remt.parse(f)
-            # find pages and strokes
-            items = (v for v in items if is_item(v))
-            # split into (page, strokes)
-            items = split(is_page, items)
-            # get PDF pages
-            items = ((get_page(p.number), s) for p, s in items)
-            # for each page and stroke get text under stroke
-            items = ((p, map(to_text(p), s)) for p, s in items)
-            # page header and each highlighted text formatted
-            items = ((fmt_header(p), map(fmt_text, t)) for p, t in items)
-            for header, texts in items:
-                print(header)
-                for text in texts:
-                    print(text)
-                print()
+        items = parse_document(ctx, data)
+        # find pages and strokes
+        items = (v for v in items if is_item(v))
+        # split into (page, strokes)
+        items = split(is_page, items)
+        # get PDF pages
+        items = ((get_page(p.number), s) for p, s in items)
+        # for each page and stroke get text under stroke
+        items = ((p, map(to_text(p), s)) for p, s in items)
+        # page header and each highlighted text formatted
+        items = ((fmt_header(p), map(fmt_text, t)) for p, t in items)
+        for header, texts in items:
+            print(header)
+            for text in texts:
+                print(text)
+            print()
 
 COMMANDS = {
     'ls': cmd_ls,

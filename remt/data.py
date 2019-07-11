@@ -19,8 +19,8 @@
 
 from collections import namedtuple
 
-class Page: pass
-class PageEnd: pass
+Page = namedtuple('Page', ['number'])
+PageEnd = namedtuple('PageEnd', ['number'])
 
 Layer = namedtuple('Layer', ['number'])
 Stroke = namedtuple(
