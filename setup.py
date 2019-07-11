@@ -18,15 +18,24 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import ast
 from setuptools import setup, find_packages
+
+VERSION = ast.parse(
+    next(l for l in open('remt/__init__.py') if l.startswith('__version__'))
+).body[0].value.s
 
 setup(
     name='remt',
-    version='0.5.0',
+    version=VERSION,
     description='remt - reMarkable tablet command-line tools',
     author='Artur Wroblewski',
     author_email='wrobell@riseup.net',
     url='https://gitlab.com/wrobell/remt',
+    project_urls={
+        'Code': 'https://gitlab.com/wrobell/remt',
+        'Issue tracker': 'https://gitlab.com/wrobell/remt/issues',
+    },
     setup_requires = ['setuptools_git >= 1.0',],
     packages=find_packages('.'),
     scripts=('bin/remt',),
@@ -74,15 +83,16 @@ so any usage is on your own risk.
 .. image:: https://gitlab.com/wrobell/remt/raw/master/examples/rm.png
    :align: center
 """,
+    long_description_content_type='text/x-rst',
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
         'Programming Language :: Python :: 3',
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Topic :: Multimedia :: Graphics',
         'Topic :: Scientific/Engineering',
     ],
     keywords='remarkable tools',
-    license='GPL',
+    license='GPLv3+',
     install_requires=[
         'pygobject', 'pycairo', 'asyncssh', 'cytoolz',
         'asyncio-contextmanager',

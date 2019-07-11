@@ -1,4 +1,5 @@
 import sphinx_rtd_theme
+import remt
 
 extensions = [
     'sphinx.ext.autodoc', 'sphinx.ext.autosummary', 'sphinx.ext.doctest',
@@ -8,7 +9,7 @@ project = 'remt'
 source_suffix = '.rst'
 master_doc = 'index'
 
-version = release = '0.5.0'
+version = release = atimer.__version__
 copyright = 'remt team'
 
 epub_basename = 'remt - {}'.format(version)
