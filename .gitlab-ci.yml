@@ -16,7 +16,7 @@ cache:
 
 before_script:
   - apt-get update
-  - apt-get -y install libgirepository1.0-dev
+  - apt-get -y install libgirepository1.0-dev libpoppler-glib-dev
   - python -V
   - pip install virtualenv
   - virtualenv venv
