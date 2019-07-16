@@ -8,13 +8,15 @@ Features
 
   - list files and directories
   - create directories
-  - export a notebook as PDF file
-  - export an annotated PDF document
+  - export a notebook as PDF file using reMarkable tablet renderer or remt
+    project renderer
+  - export an annotated PDF document using reMarkable tablet renderer or remt
+    project renderer
   - import a PDF document
   - create index of PDF file annotations
 
-- significantly smaller PDF files comparing to the ones exported by the
-  reMarkable tablet
+- `remt` project renderer supports large files export and usually produces
+  smaller PDF files comparing to the reMarkable tablet renderer
 - export supports
 
   - multi-page notebooks and PDF files
