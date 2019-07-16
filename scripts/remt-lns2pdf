@@ -39,7 +39,7 @@ args = parser.parse_args()
 with open(args.input, 'rb') as f, \
         remt.draw_context(args.in_pdf, args.output) as ctx:
 
-    for item in remt.parse(f):
+    for item in remt.parse(f, 0):
         remt.draw(item, ctx)
 
 # vim: sw=4:et:ai
