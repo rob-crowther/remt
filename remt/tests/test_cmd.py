@@ -22,6 +22,8 @@ Command line commands unit tests.
 """
 
 import os.path
+from datetime import datetime
+
 from remt import cmd as r_cmd
 from remt.error import *
 
@@ -44,7 +46,8 @@ def test_ls_line():
     result = r_cmd.ls_line('a/b', None)
     assert 'a/b' == result
 
-def test_ls_line_long():
+@mock.patch.object(r_cmd, 'datetime')
+def test_ls_line_long(mock_dt):
     """
     Test creating `ls` command long output line.
     """
@@ -54,6 +57,7 @@ def test_ls_line_long():
         'type': 'CollectionType',
         'lastModified': '1526115458925',
     }
+    mock_dt.fromtimestamp.return_value = datetime(2018, 5, 12, 9, 57, 38)
     result = r_cmd.ls_line_long('a/b', meta)
     assert 'db 2018-05-12 09:57:38 a/b' == result
 
