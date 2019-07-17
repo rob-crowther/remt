@@ -50,15 +50,15 @@ Features
 
   - list files and directories
   - create directories
-  - export a notebook as PDF file using reMarkable tablet renderer or remt
-    project renderer
-  - export an annotated PDF document using reMarkable tablet renderer or remt
-    project renderer
+  - export a notebook as PDF file using reMarkable tablet renderer or
+    `remt` project renderer
+  - export an annotated PDF document using reMarkable tablet renderer or
+    `remt` project renderer
   - import a PDF document
   - create index of PDF file annotations
 
-- `remt` project renderer supports large files export and usually produces
-  smaller PDF files comparing to the reMarkable tablet renderer
+- `remt` project renderer supports export of large files and usually
+  produces smaller PDF files comparing to the reMarkable tablet renderer
 - export supports
 
   - multi-page notebooks and PDF files
@@ -78,7 +78,7 @@ usage and installation instructions.
 
 This project is *not* an official project of the reMarkable company.
 
-Please use reMarkable firmware version 1.7.2.3 or later.
+Please, use reMarkable firmware version 1.7.2.3 or later.
 
 The `remt` project is licensed under terms of GPL license, version 3, see
 COPYING file for details. As stated in the license, there is no warranty,

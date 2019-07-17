@@ -8,15 +8,15 @@ Features
 
   - list files and directories
   - create directories
-  - export a notebook as PDF file using reMarkable tablet renderer or remt
-    project renderer
-  - export an annotated PDF document using reMarkable tablet renderer or remt
-    project renderer
+  - export a notebook as PDF file using reMarkable tablet renderer or
+    `remt` project renderer
+  - export an annotated PDF document using reMarkable tablet renderer or
+    `remt` project renderer
   - import a PDF document
   - create index of PDF file annotations
 
-- `remt` project renderer supports large files export and usually produces
-  smaller PDF files comparing to the reMarkable tablet renderer
+- `remt` project renderer supports export of large files and usually
+  produces smaller PDF files comparing to the reMarkable tablet renderer
 - export supports
 
   - multi-page notebooks and PDF files
@@ -39,7 +39,7 @@ What does not work yet
 - make pencil brush more like the one on reMarkable tablet
 - make ballpoint brush more like the one on reMarkable tablet
 
-Please use reMarkable firmware version 1.7.2.3 or later.
+Please, use reMarkable firmware version 1.7.2.3 or later.
 
 Installation
 ============
