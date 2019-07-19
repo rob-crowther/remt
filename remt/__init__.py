@@ -20,7 +20,7 @@
 from .drawer import draw_context, draw
 from .parser import parse, empty_page
 
-__version__ = '0.5.1'
+__version__ = '0.5.2'
 
 __all__ = ['draw_context', 'draw', 'parse', 'empty_page', '__version__']
 
