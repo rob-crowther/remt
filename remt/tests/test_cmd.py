@@ -27,6 +27,7 @@ from datetime import datetime
 from remt import cmd as r_cmd
 from remt.error import *
 
+import asynctest
 import pytest
 from unittest import mock
 
@@ -139,5 +140,43 @@ def test_fn_metadata_error():
 
     with pytest.raises(FileError):
         r_cmd.fn_metadata(meta, 'x/y')
+
+@pytest.mark.asyncio
+async def test_read_meta():
+    """
+    Test reading metadata.
+    """
+    sftp = mock.MagicMock()
+    sftp.mget = asynctest.CoroutineMock()
+    dir_meta = 'dir'
+
+    with mock.patch('glob.glob') as mock_glob, \
+            mock.patch('json.load') as mock_json_load, \
+            mock.patch('builtins.open') as mock_open:
+
+        mock_glob.side_effect = [
+            # let's make read_meta resistant to some filesystem
+            # inconsistencies by introducing non-matching files
+            ['f1.content', 'f2.content', 'f3.content', 'f5.content'],
+            ['f1.metadata', 'f2.metadata', 'f3.metadata', 'f4.metadata'],
+        ]
+        mock_json_load.side_effect = [
+            {'visibleName': 'f1', 'deleted': False},
+            {'pages': 3},
+
+            # deleted filename shall not be visible in the results
+            {'visibleName': 'f2', 'deleted': True},
+            {'pages': 4},
+
+            {'visibleName': 'f3'},
+            {'pages': 5},
+            {'visibleName': 'f4'},
+            {'pages': 6},
+        ]
+        result = await r_cmd.read_meta(sftp, dir_meta)
+        assert ['f1', 'f2', 'f3'] == list(result)
+        assert {'pages': 3} == result['f1']['content']
+        assert {'pages': 4} == result['f2']['content']
+        assert {'pages': 5} == result['f3']['content']
 
 # vim: sw=4:et:ai

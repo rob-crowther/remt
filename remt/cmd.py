@@ -25,13 +25,14 @@ import asyncssh
 import configparser
 import glob
 import json
+import operator
 import os.path
 import shutil
 import urllib.request
 from aiocontext import async_contextmanager
 from collections import namedtuple
 from cytoolz.dicttoolz import assoc, get_in
-from cytoolz.functoolz import flip, curry
+from cytoolz.functoolz import flip, curry, compose
 from datetime import datetime
 from tempfile import TemporaryDirectory
 from uuid import uuid4 as uuid
@@ -227,21 +228,26 @@ async def read_meta(sftp, dir_meta):
     await sftp.mget(BASE_DIR + '/*.metadata', dir_meta)
     await sftp.mget(BASE_DIR + '/*.content', dir_meta)
 
-    files = sorted(glob.glob(dir_meta + '/*.metadata'))
-    files_content = sorted(glob.glob(dir_meta + '/*.content'))
-    assert len(files) == len(files_content)
+    to_uuid = compose(
+        operator.itemgetter(0),
+        os.path.splitext,
+        os.path.basename,
+    )
+    load_json = compose(json.load, open)
 
-    data = [json.load(open(fn)) for fn in files]
-    content = (json.load(open(fn)) for fn in files_content)
+    files_content = glob.glob(dir_meta + '/*.content')
+    files_content = {to_uuid(fn): fn for fn in files_content}
 
-    for m, c in zip(data, content):
-        m['content'] = c
+    files = glob.glob(dir_meta + '/*.metadata')
+    files = ((fn, to_uuid(fn)) for fn in files)
+    files = ((fn, u) for fn, u in files if u in files_content)
 
-    data = (v for v in data if not v.get('deleted'))
-
-    uuids = (os.path.basename(v) for v in files)
-    uuids = (os.path.splitext(v)[0] for v in uuids)
-    meta = {fn: v for fn, v in zip(uuids, data)}
+    # load metadata file and content file
+    data = (
+        (u, load_json(fn), load_json(files_content[u]))
+        for fn, u in files
+    )
+    meta = {u: assoc(m, 'content', c) for u, m, c in data}
     return resolve_uuid(meta)
 
 #
